@@ -72,3 +72,25 @@ export function PrintButton() {
     </button>
   );
 }
+
+export function CopyText({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="relative">
+      <pre className="max-h-96 overflow-auto whitespace-pre-wrap rounded-lg bg-zinc-100 p-4 pr-24 text-xs leading-relaxed text-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
+        {text}
+      </pre>
+      <button
+        type="button"
+        onClick={async () => {
+          await navigator.clipboard.writeText(text);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }}
+        className="absolute right-2 top-2 rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+      >
+        {copied ? "Copied" : label}
+      </button>
+    </div>
+  );
+}

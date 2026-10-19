@@ -1,12 +1,13 @@
-import { createDocumentAction } from "./actions";
-import { DocumentFields } from "@/components/document-view";
-import { SubmitButton } from "@/components/ui";
+import Link from "next/link";
+import { createFromMarkdownAction } from "./actions";
+import { PartyFields } from "@/components/document-view";
+import { ImportForm } from "@/components/import-form";
 
 const STEPS = [
-  ["Write the scope", "Split the functionality into sections, one feature or requirement each."],
-  ["Share one link", "Send the client link. No sign-up needed on either side."],
-  ["Agree section by section", "The client agrees, disagrees or asks a question under each section."],
-  ["Keep the record", "Every response and every edit is kept, with dates and versions."],
+  ["Write the scope with AI", "Work out the scope with your AI assistant and save it as a Markdown file."],
+  ["Import it", "Sections and Q1, Q2… questions are picked up automatically. Check the preview."],
+  ["Share one link", "The client agrees or disagrees per section and answers the questions in one go."],
+  ["Update and keep the record", "Re-import the next version. Changes are versioned; nothing is lost."],
 ];
 
 export default function Home() {
@@ -18,9 +19,9 @@ export default function Home() {
           Get your client and your team on the same page.
         </h1>
         <p className="text-zinc-600 dark:text-zinc-400">
-          Share the functionality document at one link. Your client responds under each section,
-          and you keep a dated record of what was agreed, what was disputed and how it was
-          settled.
+          Import your scope document as Markdown and share it at one link. Your client responds
+          under each section and answers your questions, and you keep a dated record of what was
+          agreed, what was disputed and how it was settled.
         </p>
       </header>
 
@@ -36,11 +37,15 @@ export default function Home() {
       </ol>
 
       <section className="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-        <h2 className="mb-4 text-lg font-semibold">Start a new document</h2>
-        <form action={createDocumentAction} className="space-y-3">
-          <DocumentFields />
-          <SubmitButton>Create document</SubmitButton>
-        </form>
+        <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-semibold">Import a scope document</h2>
+          <Link href="/guide" className="text-sm underline">
+            How to format it (with AI prompt)
+          </Link>
+        </div>
+        <ImportForm action={createFromMarkdownAction} submitLabel="Create document">
+          <PartyFields />
+        </ImportForm>
       </section>
     </main>
   );

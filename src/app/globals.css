@@ -24,3 +24,84 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Rendered Markdown from imported documents */
+.markdown {
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+.markdown > * + * {
+  margin-top: 0.75em;
+}
+.markdown ul,
+.markdown ol {
+  padding-left: 1.4em;
+}
+.markdown ul {
+  list-style: disc;
+}
+.markdown ol {
+  list-style: decimal;
+}
+.markdown li + li,
+.markdown li > ul,
+.markdown li > ol {
+  margin-top: 0.25em;
+}
+.markdown strong {
+  font-weight: 600;
+}
+.markdown a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.markdown code {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.85em;
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.06);
+}
+.markdown blockquote {
+  border-left: 3px solid rgb(161 161 170);
+  padding-left: 0.9em;
+  color: rgb(82 82 91);
+}
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4 {
+  font-weight: 600;
+}
+.markdown table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.markdown th,
+.markdown td {
+  border: 1px solid rgb(228 228 231);
+  padding: 0.4em 0.7em;
+  text-align: left;
+  vertical-align: top;
+}
+.markdown th {
+  background: rgb(244 244 245);
+  font-weight: 600;
+}
+@media (prefers-color-scheme: dark) {
+  .markdown code {
+    background: rgb(255 255 255 / 0.08);
+  }
+  .markdown blockquote {
+    color: rgb(161 161 170);
+  }
+  .markdown th,
+  .markdown td {
+    border-color: rgb(39 39 42);
+  }
+  .markdown th {
+    background: rgb(24 24 27);
+  }
+}

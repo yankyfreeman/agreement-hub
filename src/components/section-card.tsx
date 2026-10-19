@@ -1,6 +1,7 @@
 import { postMessageAction, reviseSectionAction } from "@/app/actions";
 import type { Role } from "@/db";
 import type { Message, SectionView } from "@/lib/data";
+import { Markdown } from "./markdown";
 import { StatusBadge } from "./status";
 import { inputClass, labelClass } from "./styles";
 import { LocalTime, SubmitButton } from "./ui";
@@ -10,6 +11,8 @@ const KIND_LABEL: Record<Message["kind"], string> = {
   disagree: "Disagreed",
   question: "Asked a question",
   comment: "Commented",
+  answer: "Answered",
+  followup: "Asked for more detail",
 };
 
 const KIND_ACCENT: Record<Message["kind"], string> = {
@@ -17,20 +20,23 @@ const KIND_ACCENT: Record<Message["kind"], string> = {
   disagree: "border-l-red-500",
   question: "border-l-amber-500",
   comment: "border-l-zinc-300 dark:border-l-zinc-600",
+  answer: "border-l-emerald-500",
+  followup: "border-l-amber-500",
 };
 
 export function SectionCard({
   section,
-  index,
   role,
   token,
+  questionKeys,
 }: {
   section: SectionView;
-  index: number;
   role: Role;
   token: string;
+  questionKeys: Set<string>;
 }) {
   const { current } = section;
+  const canRespond = !section.archived;
 
   return (
     <article
@@ -39,45 +45,24 @@ export function SectionCard({
     >
       <header className="flex flex-wrap items-start justify-between gap-2 border-b border-zinc-200 p-4 dark:border-zinc-800">
         <div className="min-w-0">
-          <h3 className="text-base font-semibold">
-            {index}. {current.title}
-          </h3>
+          <h3 className="text-base font-semibold">{current.title}</h3>
           <p className="mt-0.5 text-xs text-zinc-500">
             Version {current.version} · <LocalTime iso={current.createdAt.toISOString()} />
           </p>
         </div>
-        <StatusBadge status={section.status} />
+        {!section.archived && <StatusBadge status={section.status} />}
       </header>
 
       <div className="space-y-4 p-4">
         {current.body ? (
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
-            {current.body}
-          </p>
+          <Markdown text={current.body} questionKeys={questionKeys} />
         ) : (
           <p className="text-sm italic text-zinc-500">No details.</p>
         )}
 
-        {section.history.length > 0 && (
-          <details className="text-sm">
-            <summary className="cursor-pointer text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
-              Previous versions ({section.history.length})
-            </summary>
-            <ol className="mt-2 space-y-3 border-l-2 border-zinc-200 pl-3 dark:border-zinc-700">
-              {section.history.map((v) => (
-                <li key={v.id}>
-                  <p className="text-xs text-zinc-500">
-                    Version {v.version} · <LocalTime iso={v.createdAt.toISOString()} />
-                  </p>
-                  <p className="font-medium">{v.title}</p>
-                  <p className="whitespace-pre-wrap text-zinc-600 dark:text-zinc-400">{v.body}</p>
-                </li>
-              ))}
-            </ol>
-          </details>
-        )}
+        <History section={section} />
 
-        {role === "developer" && (
+        {role === "developer" && canRespond && (
           <details className="text-sm print:hidden">
             <summary className="cursor-pointer text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
               Edit section
@@ -90,12 +75,12 @@ export function SectionCard({
               <textarea
                 name="body"
                 defaultValue={current.body}
-                rows={5}
-                className={inputClass}
+                rows={8}
+                className={`${inputClass} font-mono text-xs`}
               />
               <p className="text-xs text-zinc-500">
                 Saving creates version {current.version + 1}. The client will need to respond
-                again.
+                again. For bigger changes, re-import the updated Markdown file instead.
               </p>
               <SubmitButton variant="secondary">Save new version</SubmitButton>
             </form>
@@ -104,32 +89,53 @@ export function SectionCard({
 
         <Thread messages={section.messages} currentVersion={current.version} />
 
-        <div className="print:hidden">
-          {role === "client" ? (
-            <ClientResponseForm token={token} sectionId={section.id} />
-          ) : (
-            <form action={postMessageAction.bind(null, token, section.id)} className="space-y-2">
-              <label className={labelClass} htmlFor={`reply-${section.id}`}>
-                Reply to client
-              </label>
-              <textarea
-                id={`reply-${section.id}`}
-                name="body"
-                rows={2}
-                required
-                placeholder="Answer a question or explain a change…"
-                className={inputClass}
-              />
-              <SubmitButton variant="secondary">Send reply</SubmitButton>
-            </form>
-          )}
-        </div>
+        {canRespond && (
+          <div className="print:hidden">
+            {role === "developer" ? (
+              <ReplyForm token={token} sectionId={section.id} />
+            ) : section.infoOnly ? (
+              <CommentForm token={token} sectionId={section.id} />
+            ) : (
+              <ClientResponseForm token={token} sectionId={section.id} />
+            )}
+          </div>
+        )}
       </div>
     </article>
   );
 }
 
-function Thread({ messages, currentVersion }: { messages: Message[]; currentVersion: number }) {
+export function History({ section }: { section: SectionView }) {
+  if (!section.history.length) return null;
+  return (
+    <details className="text-sm">
+      <summary className="cursor-pointer text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
+        Previous versions ({section.history.length})
+      </summary>
+      <ol className="mt-2 space-y-3 border-l-2 border-zinc-200 pl-3 dark:border-zinc-700">
+        {section.history.map((v) => (
+          <li key={v.id}>
+            <p className="text-xs text-zinc-500">
+              Version {v.version} · <LocalTime iso={v.createdAt.toISOString()} />
+            </p>
+            {section.kind === "section" && <p className="font-medium">{v.title}</p>}
+            <div className="text-zinc-600 dark:text-zinc-400">
+              <Markdown text={v.body} />
+            </div>
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
+}
+
+export function Thread({
+  messages,
+  currentVersion,
+}: {
+  messages: Message[];
+  currentVersion: number;
+}) {
   if (!messages.length) return null;
   return (
     <ol className="space-y-2">
@@ -143,7 +149,9 @@ function Thread({ messages, currentVersion }: { messages: Message[]; currentVers
             <span className="rounded bg-zinc-200 px-1.5 py-px dark:bg-zinc-700">
               {m.role === "client" ? "Client" : "Developer"}
             </span>
-            <span>{m.role === "developer" ? "Replied" : KIND_LABEL[m.kind]}</span>
+            <span>
+              {m.role === "developer" && m.kind === "comment" ? "Replied" : KIND_LABEL[m.kind]}
+            </span>
             <span>·</span>
             <LocalTime iso={m.createdAt.toISOString()} />
             {m.version !== currentVersion && <span>· on version {m.version}</span>}
@@ -152,6 +160,58 @@ function Thread({ messages, currentVersion }: { messages: Message[]; currentVers
         </li>
       ))}
     </ol>
+  );
+}
+
+export function ReplyForm({
+  token,
+  sectionId,
+  allowFollowUp = false,
+}: {
+  token: string;
+  sectionId: number;
+  allowFollowUp?: boolean;
+}) {
+  return (
+    <form action={postMessageAction.bind(null, token, sectionId)} className="space-y-2">
+      <label className={labelClass} htmlFor={`reply-${sectionId}`}>
+        Reply to client
+      </label>
+      <textarea
+        id={`reply-${sectionId}`}
+        name="body"
+        rows={2}
+        required
+        placeholder="Answer a question or explain a change…"
+        className={inputClass}
+      />
+      <div className="flex flex-wrap items-center gap-3">
+        <SubmitButton variant="secondary">Send reply</SubmitButton>
+        {allowFollowUp && (
+          <label className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-400">
+            <input type="checkbox" name="kind" value="followup" />
+            Ask for more detail (reopens the question)
+          </label>
+        )}
+      </div>
+    </form>
+  );
+}
+
+function CommentForm({ token, sectionId }: { token: string; sectionId: number }) {
+  return (
+    <form action={postMessageAction.bind(null, token, sectionId)} className="space-y-2">
+      <input type="hidden" name="kind" value="comment" />
+      <textarea
+        name="body"
+        rows={2}
+        required
+        aria-label="Comment"
+        placeholder="Add a comment…"
+        className={inputClass}
+      />
+      <SubmitButton variant="secondary">Add comment</SubmitButton>
+    </form>
   );
 }
 
@@ -185,6 +245,7 @@ function ClientResponseForm({ token, sectionId }: { token: string; sectionId: nu
       <textarea
         name="body"
         rows={2}
+        aria-label="Details"
         placeholder="Add details (required unless you agree)…"
         className={inputClass}
       />

@@ -15,9 +15,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Agreement Hub",
   description: "Share a scope document with your client and keep a record of what was agreed.",
-  // Document links are secret: keep them out of search engines and referrer headers.
+  // Document links are secret: keep them out of search engines and never send
+  // them to other sites as a referrer. ("no-referrer" would also blank the
+  // Origin header on form posts, which Next.js rejects for server actions.)
   robots: { index: false, follow: false },
-  referrer: "no-referrer",
+  referrer: "same-origin",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

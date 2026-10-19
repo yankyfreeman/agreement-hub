@@ -1,4 +1,5 @@
 import {
+  boolean,
   integer,
   pgTable,
   serial,
@@ -21,12 +22,24 @@ export const documents = pgTable("documents", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export type ItemKind = "section" | "question";
+
+// A reviewable item: either a section of the scope (agree / disagree) or a
+// question for the client (answer).
 export const sections = pgTable("sections", {
   id: serial("id").primaryKey(),
   documentId: integer("document_id")
     .notNull()
     .references(() => documents.id, { onDelete: "cascade" }),
   position: integer("position").notNull(),
+  kind: text("kind").$type<ItemKind>().notNull().default("section"),
+  // Matches items across Markdown imports: "4.1", "Q3", or a slug of the title.
+  key: text("key").notNull().default(""),
+  groupLabel: text("group_label"),
+  // Shown for context only; no agreement needed and excluded from the status.
+  infoOnly: boolean("info_only").notNull().default(false),
+  // Set when a later import no longer contains the item. Kept for the record.
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -48,7 +61,9 @@ export const sectionVersions = pgTable(
 );
 
 export type Role = "client" | "developer";
-export type MessageKind = "agree" | "disagree" | "question" | "comment";
+// Client on a section: agree / disagree / question / comment. Client on a
+// question: answer. Developer: comment, or followup to reopen a question.
+export type MessageKind = "agree" | "disagree" | "question" | "comment" | "answer" | "followup";
 
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
@@ -64,8 +79,21 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Every Markdown file imported into a document, kept verbatim for the record.
+export const imports = pgTable("imports", {
+  id: serial("id").primaryKey(),
+  documentId: integer("document_id")
+    .notNull()
+    .references(() => documents.id, { onDelete: "cascade" }),
+  fileName: text("file_name").notNull().default(""),
+  markdown: text("markdown").notNull(),
+  // e.g. "3 new, 5 changed, 1 removed"
+  summary: text("summary").notNull().default(""),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Kept in sync with the tables above by hand. Every statement is idempotent so
-// it can run on each cold start.
+// it can run on each cold start; ALTERs bring older databases up to date.
 export const SCHEMA_SQL = [
   `CREATE TABLE IF NOT EXISTS documents (
     id serial PRIMARY KEY,
@@ -84,6 +112,11 @@ export const SCHEMA_SQL = [
     position integer NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now()
   )`,
+  `ALTER TABLE sections ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'section'`,
+  `ALTER TABLE sections ADD COLUMN IF NOT EXISTS key text NOT NULL DEFAULT ''`,
+  `ALTER TABLE sections ADD COLUMN IF NOT EXISTS group_label text`,
+  `ALTER TABLE sections ADD COLUMN IF NOT EXISTS info_only boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE sections ADD COLUMN IF NOT EXISTS archived_at timestamptz`,
   `CREATE TABLE IF NOT EXISTS section_versions (
     id serial PRIMARY KEY,
     section_id integer NOT NULL REFERENCES sections(id) ON DELETE CASCADE,
@@ -99,10 +132,21 @@ export const SCHEMA_SQL = [
     version integer NOT NULL,
     role text NOT NULL CHECK (role IN ('client', 'developer')),
     author_name text NOT NULL,
-    kind text NOT NULL CHECK (kind IN ('agree', 'disagree', 'question', 'comment')),
+    kind text NOT NULL,
     body text NOT NULL DEFAULT '',
+    created_at timestamptz NOT NULL DEFAULT now()
+  )`,
+  // The first release limited kind to four values; it is now validated in code.
+  `ALTER TABLE messages DROP CONSTRAINT IF EXISTS messages_kind_check`,
+  `CREATE TABLE IF NOT EXISTS imports (
+    id serial PRIMARY KEY,
+    document_id integer NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    file_name text NOT NULL DEFAULT '',
+    markdown text NOT NULL,
+    summary text NOT NULL DEFAULT '',
     created_at timestamptz NOT NULL DEFAULT now()
   )`,
   `CREATE INDEX IF NOT EXISTS sections_document_idx ON sections (document_id)`,
   `CREATE INDEX IF NOT EXISTS messages_section_idx ON messages (section_id)`,
+  `CREATE INDEX IF NOT EXISTS imports_document_idx ON imports (document_id)`,
 ];

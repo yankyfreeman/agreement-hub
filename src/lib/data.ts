@@ -1,24 +1,49 @@
 import { randomBytes } from "node:crypto";
-import { and, asc, desc, eq, inArray, max, or } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import {
   documents,
   getDb,
+  imports,
   messages,
   sections,
   sectionVersions,
+  type ItemKind,
   type MessageKind,
   type Role,
 } from "@/db";
+import {
+  parseMarkdown,
+  planImport,
+  summarizePlan,
+  type ExistingItem,
+  type ParsedDocument,
+} from "./markdown-import";
 
-export type Status = "pending" | "agreed" | "disagreed" | "question";
+export type Status =
+  // sections
+  | "pending"
+  | "agreed"
+  | "disagreed"
+  | "question"
+  | "info"
+  // questions
+  | "unanswered"
+  | "answered"
+  | "followup";
 
 export type Message = typeof messages.$inferSelect;
 export type SectionVersion = typeof sectionVersions.$inferSelect;
 export type Document = typeof documents.$inferSelect;
+export type ImportRecord = Omit<typeof imports.$inferSelect, "markdown">;
 
 export type SectionView = {
   id: number;
   position: number;
+  kind: ItemKind;
+  key: string;
+  group: string | null;
+  infoOnly: boolean;
+  archived: boolean;
   current: SectionVersion;
   history: SectionVersion[]; // older versions, newest first
   messages: Message[];
@@ -29,6 +54,7 @@ export type DocumentView = {
   document: Document;
   role: Role;
   sections: SectionView[];
+  imports: ImportRecord[];
 };
 
 function newToken() {
@@ -41,16 +67,29 @@ const STANCE: Partial<Record<MessageKind, Status>> = {
   question: "question",
 };
 
-// A section's status is the client's latest stance on its *current* version.
-// Editing a section therefore resets it to pending until the client responds again.
-function statusOf(current: SectionVersion, msgs: Message[]): Status {
+// Status is always about the *current* version, so changing an item resets it
+// until the client responds again.
+// - Section: the client's latest stance (agree / disagree / question).
+// - Question: answered once the client answers, back to "followup" if the
+//   developer asks for more after that.
+function statusOf(
+  item: { kind: ItemKind; infoOnly: boolean },
+  current: SectionVersion,
+  msgs: Message[],
+): Status {
+  if (item.kind === "section" && item.infoOnly) return "info";
   for (let i = msgs.length - 1; i >= 0; i--) {
     const m = msgs[i];
-    if (m.role !== "client" || m.version !== current.version) continue;
-    const stance = STANCE[m.kind];
-    if (stance) return stance;
+    if (m.version !== current.version) continue;
+    if (item.kind === "question") {
+      if (m.kind === "answer") return "answered";
+      if (m.kind === "followup") return "followup";
+    } else if (m.role === "client") {
+      const stance = STANCE[m.kind];
+      if (stance) return stance;
+    }
   }
-  return "pending";
+  return item.kind === "question" ? "unanswered" : "pending";
 }
 
 /** Resolves a token to its document and the role it grants. */
@@ -72,11 +111,26 @@ export async function loadDocument(token: string): Promise<DocumentView | null> 
   if (!found) return null;
   const db = await getDb();
 
-  const secs = await db
-    .select()
-    .from(sections)
-    .where(eq(sections.documentId, found.document.id))
-    .orderBy(asc(sections.position), asc(sections.id));
+  const [secs, importRows] = await Promise.all([
+    db
+      .select()
+      .from(sections)
+      .where(eq(sections.documentId, found.document.id))
+      .orderBy(asc(sections.position), asc(sections.id)),
+    found.role === "developer"
+      ? db
+          .select({
+            id: imports.id,
+            documentId: imports.documentId,
+            fileName: imports.fileName,
+            summary: imports.summary,
+            createdAt: imports.createdAt,
+          })
+          .from(imports)
+          .where(eq(imports.documentId, found.document.id))
+          .orderBy(desc(imports.createdAt))
+      : Promise.resolve([]),
+  ]);
   const ids = secs.map((s) => s.id);
 
   const [versions, msgs] = ids.length
@@ -103,29 +157,32 @@ export async function loadDocument(token: string): Promise<DocumentView | null> 
       {
         id: s.id,
         position: s.position,
+        kind: s.kind,
+        key: s.key,
+        group: s.groupLabel,
+        infoOnly: s.infoOnly,
+        archived: s.archivedAt !== null,
         current,
         history: vs.slice(0, -1).reverse(),
         messages: ms,
-        status: statusOf(current, ms),
+        status: statusOf(s, current, ms),
       },
     ];
   });
 
-  return { ...found, sections: views };
+  return { ...found, sections: views, imports: importRows };
 }
 
-export async function createDocument(input: {
-  title: string;
-  intro: string;
-  clientName: string;
-  developerName: string;
-}) {
-  const db = await getDb();
-  const [doc] = await db
-    .insert(documents)
-    .values({ ...input, shareToken: newToken(), adminToken: newToken() })
-    .returning({ adminToken: documents.adminToken });
-  return doc.adminToken;
+export function toExistingItems(view: DocumentView): ExistingItem[] {
+  return view.sections.map((s) => ({
+    id: s.id,
+    kind: s.kind,
+    key: s.key,
+    title: s.current.title,
+    body: s.current.body,
+    infoOnly: s.infoOnly,
+    archived: s.archived,
+  }));
 }
 
 export async function updateDocument(
@@ -139,29 +196,181 @@ export async function updateDocument(
     .where(eq(documents.id, documentId));
 }
 
-export async function addSection(documentId: number, title: string, body: string) {
+// ---------------------------------------------------------------------------
+// Markdown import
+
+export type ImportInput = {
+  markdown: string;
+  fileName: string;
+  /** Keys of sections the developer marked info-only in the preview. */
+  infoKeys: Set<string>;
+};
+
+
+export async function createFromMarkdown(
+  input: ImportInput & { clientName: string; developerName: string },
+) {
+  const parsed = parseMarkdown(input.markdown);
+  if (!parsed.items.length) throw new Error("No sections or questions found in the file.");
   const db = await getDb();
-  const [{ last }] = await db
-    .select({ last: max(sections.position) })
-    .from(sections)
-    .where(eq(sections.documentId, documentId));
-  const [section] = await db
-    .insert(sections)
-    .values({ documentId, position: (last ?? 0) + 1 })
-    .returning({ id: sections.id });
-  await db.insert(sectionVersions).values({ sectionId: section.id, version: 1, title, body });
+  const [doc] = await db
+    .insert(documents)
+    .values({
+      title: parsed.title || input.fileName.replace(/\.md$/i, "") || "Untitled document",
+      intro: parsed.intro,
+      clientName: input.clientName,
+      developerName: input.developerName,
+      shareToken: newToken(),
+      adminToken: newToken(),
+    })
+    .returning();
+  await applyImport(doc.id, parsed, [], input);
+  return doc.adminToken;
+}
+
+export async function reimportMarkdown(document: Document, existing: ExistingItem[], input: ImportInput) {
+  const parsed = parseMarkdown(input.markdown);
+  if (!parsed.items.length) throw new Error("No sections or questions found in the file.");
+  const db = await getDb();
+  await db
+    .update(documents)
+    .set({ title: parsed.title || document.title, intro: parsed.intro })
+    .where(eq(documents.id, document.id));
+  await applyImport(document.id, parsed, existing, input);
+}
+
+async function applyImport(
+  documentId: number,
+  parsed: ParsedDocument,
+  existing: ExistingItem[],
+  input: ImportInput,
+) {
+  const db = await getDb();
+  const plan = planImport(existing, parsed.items);
+  const now = new Date();
+  const fields = (item: ParsedDocument["items"][number], position: number) => ({
+    position,
+    kind: item.kind,
+    key: item.key,
+    groupLabel: item.group,
+    infoOnly: item.kind === "section" && input.infoKeys.has(item.key),
+  });
+
+  // New items: insert sections, then their first versions.
+  const added = plan.matches
+    .map((m, i) => ({ ...m, position: i + 1 }))
+    .filter((m) => !m.existing);
+  if (added.length) {
+    const rows = await db
+      .insert(sections)
+      .values(added.map((m) => ({ documentId, ...fields(m.item, m.position) })))
+      .returning({ id: sections.id, position: sections.position });
+    const idByPosition = new Map(rows.map((r) => [r.position, r.id]));
+    await db.insert(sectionVersions).values(
+      added.map((m) => ({
+        sectionId: idByPosition.get(m.position)!,
+        version: 1,
+        title: m.item.title,
+        body: m.item.body,
+      })),
+    );
+  }
+
+  // Matched items: refresh their place in the outline; changed text becomes a
+  // new version (old versions and their responses stay in the record).
+  const matched = plan.matches.flatMap((m, i) =>
+    m.existing ? [{ ...m, existing: m.existing, position: i + 1 }] : [],
+  );
+  const changedIds = matched.filter((m) => m.change === "changed").map((m) => m.existing.id);
+  const renumbered = matched.filter((m) => m.renumbered);
+  const versionIds = [...changedIds, ...renumbered.map((m) => m.existing.id)];
+  const latest = versionIds.length
+    ? await db
+        .select({ sectionId: sectionVersions.sectionId, version: sectionVersions.version })
+        .from(sectionVersions)
+        .where(inArray(sectionVersions.sectionId, versionIds))
+    : [];
+  const versionOf = (id: number) =>
+    Math.max(0, ...latest.filter((v) => v.sectionId === id).map((v) => v.version));
+
+  await Promise.all([
+    ...matched.map((m) =>
+      db
+        .update(sections)
+        .set({ ...fields(m.item, m.position), archivedAt: null })
+        .where(eq(sections.id, m.existing.id)),
+    ),
+    // A heading number change (4.5 → 4.6) is not a change in what was agreed,
+    // so it updates the current version's title instead of adding a version.
+    ...renumbered.map((m) =>
+      db
+        .update(sectionVersions)
+        .set({ title: m.item.title })
+        .where(
+          and(
+            eq(sectionVersions.sectionId, m.existing.id),
+            eq(sectionVersions.version, versionOf(m.existing.id)),
+          ),
+        ),
+    ),
+  ]);
+  if (changedIds.length) {
+    await db.insert(sectionVersions).values(
+      matched
+        .filter((m) => m.change === "changed")
+        .map((m) => ({
+          sectionId: m.existing.id,
+          version: versionOf(m.existing.id) + 1,
+          title: m.item.title,
+          body: m.item.body,
+        })),
+    );
+  }
+
+  if (plan.removed.length) {
+    await db
+      .update(sections)
+      .set({ archivedAt: now })
+      .where(inArray(sections.id, plan.removed.map((e) => e.id)));
+  }
+
+  await db.insert(imports).values({
+    documentId,
+    fileName: input.fileName,
+    markdown: input.markdown,
+    summary: summarizePlan(plan),
+  });
   await touch(documentId);
 }
 
-/** Returns the section if it belongs to the document, otherwise null. */
-async function sectionInDocument(documentId: number, sectionId: number) {
+export async function getImportMarkdown(documentId: number, importId: number) {
   const db = await getDb();
-  const [section] = await db
-    .select({ id: sections.id })
-    .from(sections)
-    .where(and(eq(sections.id, sectionId), eq(sections.documentId, documentId)))
+  const [row] = await db
+    .select({ fileName: imports.fileName, markdown: imports.markdown })
+    .from(imports)
+    .where(and(eq(imports.id, importId), eq(imports.documentId, documentId)))
     .limit(1);
-  return section ?? null;
+  return row ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Edits and responses
+
+/** Returns the item if it belongs to the document and is not archived. */
+async function liveItem(documentId: number, sectionId: number) {
+  const db = await getDb();
+  const [item] = await db
+    .select({ id: sections.id, kind: sections.kind, infoOnly: sections.infoOnly })
+    .from(sections)
+    .where(
+      and(
+        eq(sections.id, sectionId),
+        eq(sections.documentId, documentId),
+        isNull(sections.archivedAt),
+      ),
+    )
+    .limit(1);
+  return item ?? null;
 }
 
 async function currentVersion(sectionId: number) {
@@ -181,7 +390,7 @@ export async function reviseSection(
   title: string,
   body: string,
 ) {
-  if (!(await sectionInDocument(documentId, sectionId))) return;
+  if (!(await liveItem(documentId, sectionId))) return;
   const current = await currentVersion(sectionId);
   if (current && current.title === title && current.body === body) return;
   const db = await getDb();
@@ -194,14 +403,34 @@ export async function reviseSection(
   await touch(documentId);
 }
 
+const SECTION_STANCES: MessageKind[] = ["agree", "disagree", "question", "comment"];
+
+/** Which message kind a role may post on an item; null if none. */
+function resolveKind(
+  item: { kind: ItemKind; infoOnly: boolean },
+  role: Role,
+  requested: MessageKind,
+): MessageKind {
+  if (role === "developer") {
+    return item.kind === "question" && requested === "followup" ? "followup" : "comment";
+  }
+  if (item.kind === "question") return "answer";
+  if (item.infoOnly) return "comment";
+  return SECTION_STANCES.includes(requested) ? requested : "comment";
+}
+
 export async function addMessage(
   document: Document,
   role: Role,
   sectionId: number,
-  kind: MessageKind,
+  requested: MessageKind,
   body: string,
 ) {
-  if (!(await sectionInDocument(document.id, sectionId))) return;
+  const item = await liveItem(document.id, sectionId);
+  if (!item) return;
+  const kind = resolveKind(item, role, requested);
+  // Only a plain agreement may be posted without text.
+  if (kind !== "agree" && !body) return;
   const current = await currentVersion(sectionId);
   if (!current) return;
   const db = await getDb();
