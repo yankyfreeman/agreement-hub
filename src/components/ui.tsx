@@ -65,7 +65,11 @@ export function PrintButton() {
   return (
     <button
       type="button"
-      onClick={() => window.print()}
+      onClick={() => {
+        // Expand collapsed conversations so the printout is the full record.
+        document.querySelectorAll("main details").forEach((d) => d.setAttribute("open", ""));
+        window.print();
+      }}
       className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 print:hidden dark:border-zinc-700 dark:hover:bg-zinc-800"
     >
       Print / save PDF

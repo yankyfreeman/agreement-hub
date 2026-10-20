@@ -105,3 +105,38 @@ body {
     background: rgb(24 24 27);
   }
 }
+
+/* Document view: the scope reads like a printed page */
+.doc {
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+}
+.doc .markdown {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+.doc .markdown th,
+.doc .markdown td {
+  font-size: 0.95rem;
+}
+/* Reaction icons appear on hover; touch screens have no hover, so keep them faintly visible */
+.item-actions {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.group:hover > .item-actions,
+.group:focus-within > .item-actions,
+.item-actions[data-open="true"] {
+  opacity: 1;
+}
+@media (hover: none) {
+  .item-actions {
+    opacity: 0.55;
+  }
+}
+@media print {
+  /* Print the full record, including collapsed conversations */
+  details::details-content {
+    content-visibility: visible;
+    display: contents;
+  }
+}

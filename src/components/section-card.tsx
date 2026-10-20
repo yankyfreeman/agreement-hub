@@ -1,10 +1,9 @@
 import { postMessageAction, reviseSectionAction } from "@/app/actions";
 import type { Role } from "@/db";
-import type { Message, SectionView } from "@/lib/data";
+import type { Message, SectionView, Status } from "@/lib/data";
+import { ItemActions } from "./item-actions";
 import { Markdown } from "./markdown";
-import { StatusBadge } from "./status";
-import { inputClass, labelClass } from "./styles";
-import { LocalTime, SubmitButton } from "./ui";
+import { LocalTime } from "./ui";
 
 const KIND_LABEL: Record<Message["kind"], string> = {
   agree: "Agreed",
@@ -24,7 +23,29 @@ const KIND_ACCENT: Record<Message["kind"], string> = {
   followup: "border-l-amber-500",
 };
 
-export function SectionCard({
+// Thin line in the left margin showing where things stand. Nothing until
+// someone responds, so an untouched document looks like a plain document.
+export const MARKER: Record<Status, string> = {
+  agreed: "border-l-emerald-500",
+  answered: "border-l-emerald-500",
+  disagreed: "border-l-red-500",
+  question: "border-l-amber-500",
+  followup: "border-l-amber-500",
+  pending: "border-l-transparent",
+  unanswered: "border-l-transparent",
+  info: "border-l-transparent",
+};
+
+const STATUS_TEXT: Partial<Record<Status, { label: string; className: string }>> = {
+  agreed: { label: "Agreed", className: "text-emerald-700 dark:text-emerald-400" },
+  disagreed: { label: "Disagreed", className: "text-red-700 dark:text-red-400" },
+  question: { label: "Question raised", className: "text-amber-700 dark:text-amber-400" },
+  answered: { label: "Answered", className: "text-emerald-700 dark:text-emerald-400" },
+  followup: { label: "More detail requested", className: "text-amber-700 dark:text-amber-400" },
+};
+
+/** A section of the document: heading and text, with reactions on hover. */
+export function SectionBlock({
   section,
   role,
   token,
@@ -36,83 +57,78 @@ export function SectionCard({
   questionKeys: Set<string>;
 }) {
   const { current } = section;
-  const canRespond = !section.archived;
+  const mode = section.archived
+    ? null
+    : role === "developer"
+      ? "dev-section"
+      : section.infoOnly
+        ? "info"
+        : "section";
 
   return (
     <article
       id={`section-${section.id}`}
-      className="break-inside-avoid rounded-lg border border-zinc-200 dark:border-zinc-800"
+      className={`group relative -ml-4 break-inside-avoid border-l-2 py-2 pl-[14px] pr-10 sm:pr-0 ${MARKER[section.status]}`}
     >
-      <header className="flex flex-wrap items-start justify-between gap-2 border-b border-zinc-200 p-4 dark:border-zinc-800">
-        <div className="min-w-0">
-          <h3 className="text-base font-semibold">{current.title}</h3>
-          <p className="mt-0.5 text-xs text-zinc-500">
-            Version {current.version} · <LocalTime iso={current.createdAt.toISOString()} />
-          </p>
-        </div>
-        {!section.archived && <StatusBadge status={section.status} />}
-      </header>
-
-      <div className="space-y-4 p-4">
-        {current.body ? (
-          <Markdown text={current.body} questionKeys={questionKeys} />
-        ) : (
-          <p className="text-sm italic text-zinc-500">No details.</p>
-        )}
-
-        <History section={section} />
-
-        {role === "developer" && canRespond && (
-          <details className="text-sm print:hidden">
-            <summary className="cursor-pointer text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
-              Edit section
-            </summary>
-            <form
-              action={reviseSectionAction.bind(null, token, section.id)}
-              className="mt-3 space-y-3"
-            >
-              <input name="title" defaultValue={current.title} required className={inputClass} />
-              <textarea
-                name="body"
-                defaultValue={current.body}
-                rows={8}
-                className={`${inputClass} font-mono text-xs`}
-              />
-              <p className="text-xs text-zinc-500">
-                Saving creates version {current.version + 1}. The client will need to respond
-                again. For bigger changes, re-import the updated Markdown file instead.
-              </p>
-              <SubmitButton variant="secondary">Save new version</SubmitButton>
-            </form>
-          </details>
-        )}
-
-        <Thread messages={section.messages} currentVersion={current.version} />
-
-        {canRespond && (
-          <div className="print:hidden">
-            {role === "developer" ? (
-              <ReplyForm token={token} sectionId={section.id} />
-            ) : section.infoOnly ? (
-              <CommentForm token={token} sectionId={section.id} />
-            ) : (
-              <ClientResponseForm token={token} sectionId={section.id} />
-            )}
-          </div>
-        )}
-      </div>
+      <h3 className="mb-1 text-lg font-semibold">{current.title}</h3>
+      {current.body ? (
+        <Markdown text={current.body} questionKeys={questionKeys} />
+      ) : (
+        <p className="text-sm italic text-zinc-500">No details.</p>
+      )}
+      <ItemMeta section={section} />
+      {mode && (
+        <ItemActions
+          mode={mode}
+          respond={postMessageAction.bind(null, token, section.id)}
+          revise={
+            role === "developer" ? reviseSectionAction.bind(null, token, section.id) : undefined
+          }
+          title={current.title}
+          body={current.body}
+          version={current.version}
+        />
+      )}
     </article>
   );
 }
 
-export function History({ section }: { section: SectionView }) {
+/**
+ * One quiet line under a block ("Agreed · 2 messages · 1 earlier version")
+ * that expands into the conversation and older versions.
+ */
+export function ItemMeta({ section }: { section: SectionView }) {
+  const status = STATUS_TEXT[section.status];
+  const count = section.messages.length;
+  const earlier = section.history.length;
+  if (!status && !count && !earlier) return null;
+
+  const parts = [
+    count ? `${count} ${count === 1 ? "message" : "messages"}` : null,
+    earlier ? `${earlier} earlier ${earlier === 1 ? "version" : "versions"}` : null,
+  ].filter(Boolean);
+
+  return (
+    <details className="mt-2 font-sans text-xs">
+      <summary className="cursor-pointer list-none text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 [&::-webkit-details-marker]:hidden">
+        {status && <span className={`font-medium ${status.className}`}>{status.label}</span>}
+        {status && parts.length > 0 && " · "}
+        <span className="underline decoration-dotted underline-offset-2">{parts.join(" · ")}</span>
+      </summary>
+      <div className="mt-3 space-y-3 text-sm">
+        <Thread messages={section.messages} currentVersion={section.current.version} />
+        <History section={section} />
+      </div>
+    </details>
+  );
+}
+
+function History({ section }: { section: SectionView }) {
   if (!section.history.length) return null;
   return (
-    <details className="text-sm">
-      <summary className="cursor-pointer text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
-        Previous versions ({section.history.length})
-      </summary>
-      <ol className="mt-2 space-y-3 border-l-2 border-zinc-200 pl-3 dark:border-zinc-700">
+    <div>
+      <p className="mb-1 text-xs font-medium text-zinc-500">Earlier versions</p>
+      <ol className="space-y-3 border-l-2 border-zinc-200 pl-3 dark:border-zinc-700">
         {section.history.map((v) => (
           <li key={v.id}>
             <p className="text-xs text-zinc-500">
@@ -125,24 +141,18 @@ export function History({ section }: { section: SectionView }) {
           </li>
         ))}
       </ol>
-    </details>
+    </div>
   );
 }
 
-export function Thread({
-  messages,
-  currentVersion,
-}: {
-  messages: Message[];
-  currentVersion: number;
-}) {
+function Thread({ messages, currentVersion }: { messages: Message[]; currentVersion: number }) {
   if (!messages.length) return null;
   return (
     <ol className="space-y-2">
       {messages.map((m) => (
         <li
           key={m.id}
-          className={`rounded-md border-l-4 bg-zinc-50 p-3 text-sm dark:bg-zinc-900 ${KIND_ACCENT[m.kind]}`}
+          className={`rounded-md border-l-4 bg-zinc-50 p-3 dark:bg-zinc-900 ${KIND_ACCENT[m.kind]}`}
         >
           <p className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
             <span className="font-semibold text-zinc-800 dark:text-zinc-200">{m.authorName}</span>
@@ -160,96 +170,5 @@ export function Thread({
         </li>
       ))}
     </ol>
-  );
-}
-
-export function ReplyForm({
-  token,
-  sectionId,
-  allowFollowUp = false,
-}: {
-  token: string;
-  sectionId: number;
-  allowFollowUp?: boolean;
-}) {
-  return (
-    <form action={postMessageAction.bind(null, token, sectionId)} className="space-y-2">
-      <label className={labelClass} htmlFor={`reply-${sectionId}`}>
-        Reply to client
-      </label>
-      <textarea
-        id={`reply-${sectionId}`}
-        name="body"
-        rows={2}
-        required
-        placeholder="Answer a question or explain a change…"
-        className={inputClass}
-      />
-      <div className="flex flex-wrap items-center gap-3">
-        <SubmitButton variant="secondary">Send reply</SubmitButton>
-        {allowFollowUp && (
-          <label className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-400">
-            <input type="checkbox" name="kind" value="followup" />
-            Ask for more detail (reopens the question)
-          </label>
-        )}
-      </div>
-    </form>
-  );
-}
-
-function CommentForm({ token, sectionId }: { token: string; sectionId: number }) {
-  return (
-    <form action={postMessageAction.bind(null, token, sectionId)} className="space-y-2">
-      <input type="hidden" name="kind" value="comment" />
-      <textarea
-        name="body"
-        rows={2}
-        required
-        aria-label="Comment"
-        placeholder="Add a comment…"
-        className={inputClass}
-      />
-      <SubmitButton variant="secondary">Add comment</SubmitButton>
-    </form>
-  );
-}
-
-const CHOICES = [
-  { kind: "agree", label: "Agree", hint: "This is correct" },
-  { kind: "question", label: "Question", hint: "I need clarification" },
-  { kind: "disagree", label: "Disagree", hint: "This needs to change" },
-  { kind: "comment", label: "Comment", hint: "Just a note" },
-] as const;
-
-function ClientResponseForm({ token, sectionId }: { token: string; sectionId: number }) {
-  return (
-    <form action={postMessageAction.bind(null, token, sectionId)} className="space-y-3">
-      <fieldset>
-        <legend className={labelClass}>Your response</legend>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {CHOICES.map((c, i) => (
-            <label
-              key={c.kind}
-              className="flex cursor-pointer flex-col rounded-md border border-zinc-300 px-3 py-2 text-sm has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-100 dark:border-zinc-700 dark:has-[:checked]:border-zinc-100 dark:has-[:checked]:bg-zinc-800"
-            >
-              <span className="flex items-center gap-2 font-medium">
-                <input type="radio" name="kind" value={c.kind} defaultChecked={i === 0} required />
-                {c.label}
-              </span>
-              <span className="text-xs text-zinc-500">{c.hint}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-      <textarea
-        name="body"
-        rows={2}
-        aria-label="Details"
-        placeholder="Add details (required unless you agree)…"
-        className={inputClass}
-      />
-      <SubmitButton>Submit response</SubmitButton>
-    </form>
   );
 }

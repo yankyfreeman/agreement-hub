@@ -4,8 +4,8 @@ import { toExistingItems, type DocumentView as View, type SectionView } from "@/
 import { ImportForm } from "./import-form";
 import { Markdown } from "./markdown";
 import { QuestionsBlock } from "./questions-block";
-import { SectionCard } from "./section-card";
-import { StatusSummary } from "./status";
+import { SectionBlock } from "./section-card";
+import { SummaryLine } from "./status";
 import { inputClass, labelClass } from "./styles";
 import { CopyLink, LocalTime, PrintButton, SubmitButton } from "./ui";
 
@@ -41,85 +41,91 @@ export function DocumentView({ view, token }: { view: View; token: string }) {
   const props = { role, token, questionKeys };
 
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8">
-      <nav className="flex items-center justify-between print:hidden">
-        <Link href="/" className="text-sm font-semibold">
-          Agreement Hub
-        </Link>
-        <PrintButton />
-      </nav>
+    <div className="flex-1 bg-zinc-100 print:bg-white dark:bg-zinc-900/60">
+      <main className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8 print:p-0">
+        <nav className="flex items-center justify-between print:hidden">
+          <Link href="/" className="text-sm font-semibold">
+            Agreement Hub
+          </Link>
+          <PrintButton />
+        </nav>
 
-      {isDeveloper && <DeveloperPanel view={view} token={token} />}
+        {isDeveloper && <DeveloperPanel view={view} token={token} />}
 
-      <header className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight">{doc.title}</h1>
-        <p className="text-sm text-zinc-500">
-          Between <strong className="text-zinc-700 dark:text-zinc-300">{doc.clientName}</strong>{" "}
-          (client) and{" "}
-          <strong className="text-zinc-700 dark:text-zinc-300">{doc.developerName}</strong>{" "}
-          (developer) · last activity <LocalTime iso={doc.updatedAt.toISOString()} />
-        </p>
-        {doc.intro && (
-          <div className="text-zinc-700 dark:text-zinc-300">
-            <Markdown text={doc.intro} />
-          </div>
-        )}
-      </header>
+        {/* The document itself, laid out like a printed page */}
+        <article className="doc rounded-sm bg-white px-5 py-10 shadow-sm ring-1 ring-zinc-200 sm:px-16 sm:py-14 print:px-0 print:py-0 print:shadow-none print:ring-0 dark:bg-zinc-950 dark:ring-zinc-800">
+          <header className="mb-8 space-y-3 border-b border-zinc-200 pb-6 dark:border-zinc-800">
+            <h1 className="text-3xl font-bold leading-tight tracking-tight">{doc.title}</h1>
+            <p className="font-sans text-sm text-zinc-500">
+              Between <strong className="font-medium text-zinc-700 dark:text-zinc-300">{doc.clientName}</strong>{" "}
+              (client) and{" "}
+              <strong className="font-medium text-zinc-700 dark:text-zinc-300">{doc.developerName}</strong>{" "}
+              (developer) · last activity <LocalTime iso={doc.updatedAt.toISOString()} />
+            </p>
+            <SummaryLine sections={sections} />
+            {doc.intro && (
+              <div className="text-zinc-700 dark:text-zinc-300">
+                <Markdown text={doc.intro} />
+              </div>
+            )}
+            {live.length > 0 && (
+              <p className="font-sans text-xs text-zinc-500 print:hidden">
+                {isDeveloper
+                  ? "Hover over a section to reply or edit it, or over a question to reply."
+                  : "Hover over a section (or tap the icons beside it) to agree, disagree or comment. Questions have a box for your answer."}
+              </p>
+            )}
+          </header>
 
-      <StatusSummary sections={sections} />
-
-      {!isDeveloper && live.length > 0 && (
-        <p className="text-sm text-zinc-600 print:hidden dark:text-zinc-400">
-          Please go through each section and tell us whether you agree, disagree or have a
-          question, and answer the questions further down. Everything is kept as a record for
-          both sides.
-        </p>
-      )}
-
-      <div className="space-y-4">
-        {toBlocks(live).map((block) =>
-          block.type === "questions" ? (
-            <QuestionsBlock key={`q-${block.questions[0].id}`} questions={block.questions} {...props} />
-          ) : (
-            <div key={block.section.id} className="space-y-3">
-              {block.heading && <h2 className="pt-4 text-lg font-semibold">{block.heading}</h2>}
-              <SectionCard section={block.section} {...props} />
-            </div>
-          ),
-        )}
-        {live.length === 0 && (
-          <p className="rounded-lg border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
-            Nothing to review yet.
-          </p>
-        )}
-      </div>
-
-      {archived.length > 0 && (
-        <details className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-          <summary className="cursor-pointer text-sm font-medium">
-            Removed in later versions ({archived.length})
-          </summary>
-          <p className="mt-2 text-xs text-zinc-500">
-            These items are no longer in the document. They are kept, with their responses, for
-            the record.
-          </p>
-          <div className="mt-3 space-y-3 opacity-80">
-            {toBlocks(archived).map((block) =>
+          <div className="space-y-2">
+            {toBlocks(live).map((block) =>
               block.type === "questions" ? (
                 <QuestionsBlock
-                  key={`aq-${block.questions[0].id}`}
+                  key={`q-${block.questions[0].id}`}
                   questions={block.questions}
                   {...props}
-                  role="developer"
                 />
               ) : (
-                <SectionCard key={block.section.id} section={block.section} {...props} />
+                <div key={block.section.id}>
+                  {block.heading && (
+                    <h2 className="mb-1 mt-8 text-2xl font-bold tracking-tight">{block.heading}</h2>
+                  )}
+                  <SectionBlock section={block.section} {...props} />
+                </div>
               ),
             )}
+            {live.length === 0 && (
+              <p className="py-8 text-center font-sans text-sm text-zinc-500">Nothing to review yet.</p>
+            )}
           </div>
-        </details>
-      )}
-    </main>
+
+          {archived.length > 0 && (
+            <details className="mt-12 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+              <summary className="cursor-pointer font-sans text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Removed in later versions ({archived.length})
+              </summary>
+              <p className="mt-2 font-sans text-xs text-zinc-500">
+                These items are no longer in the document. They are kept, with their responses,
+                for the record.
+              </p>
+              <div className="mt-4 space-y-2 opacity-75">
+                {toBlocks(archived).map((block) =>
+                  block.type === "questions" ? (
+                    <QuestionsBlock
+                      key={`aq-${block.questions[0].id}`}
+                      questions={block.questions}
+                      {...props}
+                    />
+                  ) : (
+                    <SectionBlock key={block.section.id} section={block.section} {...props} />
+                  ),
+                )}
+              </div>
+            </details>
+          )}
+        </article>
+      </main>
+    </div>
   );
 }
 
