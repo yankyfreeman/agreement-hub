@@ -39,6 +39,11 @@ export function slug(text: string) {
     .replace(/^-|-$/g, "");
 }
 
+/** "4.1 Platform" → "Platform" */
+export function withoutNumber(title: string) {
+  return title.replace(NUMBERED_HEADING, "");
+}
+
 function headingKey(title: string) {
   return title.match(NUMBERED_HEADING)?.[1] ?? slug(title);
 }
@@ -196,6 +201,68 @@ export function parseMarkdown(source: string): ParsedDocument {
 function firstPara(li: ListItem): Paragraph | undefined {
   const first = li.children[0];
   return first?.type === "paragraph" ? first : undefined;
+}
+
+// ---------------------------------------------------------------------------
+// Export
+
+/**
+ * Writes a document back out as Markdown that parses to the same items, so it
+ * can be edited and re-imported with every item matching (and unchanged items
+ * keeping their agreement). Info-only flags are not part of the Markdown.
+ */
+export function toMarkdown(doc: Omit<ParsedDocument, "items"> & { items: Omit<ParsedItem, "infoOnly">[] }) {
+  const out: string[] = [`# ${doc.title}`];
+  if (doc.intro) out.push(doc.intro);
+
+  // The last "##" heading written, the heading the parser is currently
+  // "inside", and whether that heading has text of its own (questions placed
+  // under it would make it info-only).
+  let h2: string | null = null;
+  let heading: string | null = null;
+  let headingHasBody = false;
+  let label: string | null = null;
+
+  for (const item of doc.items) {
+    if (item.kind === "section") {
+      if (item.group && item.group !== h2) out.push(`## ${item.group}`);
+      out.push(`${item.group ? "###" : "##"} ${item.title}`, item.body);
+      h2 = item.group ?? item.title;
+      heading = item.title;
+      headingHasBody = true;
+      label = null;
+      continue;
+    }
+
+    const group = item.group;
+    if (group !== heading && group !== label) {
+      if (group && NUMBERED_HEADING.test(group)) {
+        // The group came from a heading such as "## 6. Questions for you".
+        out.push(`## ${group}`);
+        h2 = heading = group;
+        headingHasBody = false;
+        label = null;
+      } else {
+        if (headingHasBody || heading === null) {
+          out.push("## Questions for you");
+          h2 = heading = "Questions for you";
+          headingHasBody = false;
+        }
+        if (group && group !== heading) {
+          out.push(`**${group}**`);
+          label = group;
+        }
+      }
+    }
+    // Continuation lines are indented so they stay inside the list item.
+    out.push(`- **${item.key}.** ${item.body.replace(/\n/g, "\n  ")}`);
+  }
+
+  // Consecutive questions form one list; everything else is separated by a blank line.
+  return out
+    .map((block, i) => (i > 0 && !(block.startsWith("- **Q") && out[i - 1].startsWith("- **Q")) ? `\n${block}` : block))
+    .join("\n")
+    .concat("\n");
 }
 
 // ---------------------------------------------------------------------------

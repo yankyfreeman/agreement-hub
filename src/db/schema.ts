@@ -92,6 +92,14 @@ export const imports = pgTable("imports", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// One row per rate-limited call, e.g. bucket "create:<caller>". Rows older
+// than a day are pruned.
+export const rateEvents = pgTable("rate_events", {
+  id: serial("id").primaryKey(),
+  bucket: text("bucket").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Kept in sync with the tables above by hand. Every statement is idempotent so
 // it can run on each cold start; ALTERs bring older databases up to date.
 export const SCHEMA_SQL = [
@@ -149,4 +157,10 @@ export const SCHEMA_SQL = [
   `CREATE INDEX IF NOT EXISTS sections_document_idx ON sections (document_id)`,
   `CREATE INDEX IF NOT EXISTS messages_section_idx ON messages (section_id)`,
   `CREATE INDEX IF NOT EXISTS imports_document_idx ON imports (document_id)`,
+  `CREATE TABLE IF NOT EXISTS rate_events (
+    id serial PRIMARY KEY,
+    bucket text NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now()
+  )`,
+  `CREATE INDEX IF NOT EXISTS rate_events_bucket_idx ON rate_events (bucket, created_at)`,
 ];

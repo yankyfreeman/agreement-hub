@@ -35,11 +35,12 @@ export function LocalTime({ iso }: { iso: string }) {
   );
 }
 
-export function CopyLink({ path, label }: { path: string; label: string }) {
-  const [url, setUrl] = useState(path);
+/** Copies this site's URL for `path`, optionally after a command such as "claude mcp add …". */
+export function CopyLink({ path, label, prefix = "" }: { path: string; label: string; prefix?: string }) {
+  const [url, setUrl] = useState(prefix + path);
   const [copied, setCopied] = useState(false);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- origin is only known in the browser
-  useEffect(() => setUrl(window.location.origin + path), [path]);
+  useEffect(() => setUrl(prefix + window.location.origin + path), [prefix, path]);
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

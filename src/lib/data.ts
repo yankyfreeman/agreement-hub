@@ -15,6 +15,7 @@ import {
   parseMarkdown,
   planImport,
   summarizePlan,
+  toMarkdown,
   type ExistingItem,
   type ParsedDocument,
 } from "./markdown-import";
@@ -183,6 +184,20 @@ export function toExistingItems(view: DocumentView): ExistingItem[] {
     infoOnly: s.infoOnly,
     archived: s.archived,
   }));
+}
+
+/**
+ * The document as it stands now (including edits made on the website) as
+ * Markdown. Re-importing it unchanged leaves every item unchanged.
+ */
+export function documentMarkdown(view: DocumentView) {
+  return toMarkdown({
+    title: view.document.title,
+    intro: view.document.intro,
+    items: view.sections
+      .filter((s) => !s.archived)
+      .map((s) => ({ kind: s.kind, key: s.key, title: s.current.title, body: s.current.body, group: s.group })),
+  });
 }
 
 export async function updateDocument(

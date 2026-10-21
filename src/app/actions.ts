@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { MessageKind } from "@/db";
 import {
@@ -13,6 +14,7 @@ import {
   toExistingItems,
   updateDocument,
 } from "@/lib/data";
+import { callerId, takeCreate } from "@/lib/rate-limit";
 
 // Anyone can POST to a server action, so every action re-checks the token and
 // derives the caller's role from it. Nothing about the role comes from the form.
@@ -44,6 +46,9 @@ async function requireDeveloper(token: string) {
 export async function createFromMarkdownAction(_: FormState, form: FormData): Promise<FormState> {
   const input = importFields(form);
   if (!input.markdown.trim()) return { error: "Choose a Markdown file or paste its contents." };
+  if (!(await takeCreate(callerId(await headers())))) {
+    return { error: "Too many new documents in a short time. Please try again in an hour." };
+  }
   let adminToken: string;
   try {
     adminToken = await createFromMarkdown({

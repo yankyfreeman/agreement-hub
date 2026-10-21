@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ConnectCard } from "@/components/connect-card";
 import { SkillCard } from "@/components/skill-card";
 import { CopyText } from "@/components/ui";
 
@@ -73,6 +74,8 @@ export default function GuidePage() {
       </header>
 
       <SkillCard />
+
+      <ConnectCard />
 
       <header id="without-claude" className="scroll-mt-6 space-y-2 border-t border-zinc-200 pt-8 dark:border-zinc-800">
         <h2 className="text-lg font-semibold">Not using Claude?</h2>

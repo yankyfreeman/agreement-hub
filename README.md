@@ -23,6 +23,27 @@ what was agreed, what was disputed, and how it was resolved.
 6. **Import the next version** of the Markdown into the same document when the
    scope changes.
 
+### Connect Claude (MCP)
+
+`/api/mcp` is an MCP server (Streamable HTTP, no sign-in) so a developer's AI
+assistant can do all of the above without the website. Add it in the Claude app
+under Customize → Connectors, or in Claude Code with
+`claude mcp add --transport http agreement-hub https://<site>/api/mcp`.
+
+| Tool | Does |
+|---|---|
+| `create_document` | Publishes Markdown; returns the developer and client links |
+| `get_open_items` | What needs the developer: disagreements, questions, answers, what's waiting |
+| `get_document` | The whole record: every item's status and conversation |
+| `reply` | Replies on a section or question, or asks for more detail on a question |
+| `get_markdown` | The current document as Markdown, ready to edit |
+| `preview_update` / `apply_update` | Shows what an updated version would change, then imports it |
+
+There are no accounts: every tool except `create_document` takes the document's
+developer link, exactly like the website. Rate limits (`src/lib/rate-limit.ts`)
+are stored in the database: per caller IP, per document, and on new documents
+overall (shared with the website's import). Tools live in `src/lib/mcp.ts`.
+
 ### Markdown format
 
 | Markdown | Becomes |
@@ -103,10 +124,13 @@ src/
     manage/[token]/       developer view (+ imports/[id] download)
     d/[token]/            client view
     actions.ts            server actions (all writes; role checked from the token)
+    api/mcp/              MCP server for AI assistants (tools in lib/mcp.ts)
   components/             UI (document view, sections, questions, import form)
   db/                     Drizzle schema and connection
   lib/data.ts             queries, status logic, applying imports
-  lib/markdown-import.ts  Markdown parsing and re-import matching
+  lib/markdown-import.ts  Markdown parsing, re-import matching and export
+  lib/mcp.ts              MCP tools
+  lib/rate-limit.ts       rate limits for imports and MCP
 skill/                    Claude skill that writes scope documents in this format
 public/agreement-hub-scope.zip   the skill, as served for download
 ```

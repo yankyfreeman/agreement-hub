@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createFromMarkdownAction } from "./actions";
 import { PartyFields } from "@/components/document-view";
+import { ConnectCard } from "@/components/connect-card";
 import { ImportForm } from "@/components/import-form";
 import { SkillCard } from "@/components/skill-card";
 
@@ -27,6 +28,8 @@ export default function Home() {
       </header>
 
       <SkillCard />
+
+      <ConnectCard />
 
       <ol className="grid gap-3 sm:grid-cols-2">
         {STEPS.map(([title, text], i) => (
