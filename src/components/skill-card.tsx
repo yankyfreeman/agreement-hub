@@ -1,18 +1,19 @@
-import Link from "next/link";
-
 // Built from skill/agreement-hub-scope (see skill/README.md).
 const SKILL_ZIP = "/agreement-hub-scope.zip";
 
-/** Download and install steps for the Claude skill that writes scope documents in our format. */
-export function SkillCard({ showGuideLink = false }: { showGuideLink?: boolean }) {
+/** The recommended way to write a scope document: the Claude skill, with download and install steps. */
+export function SkillCard() {
   return (
-    <section className="space-y-4 rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
+    <section className="space-y-4 rounded-lg border-2 border-zinc-900 p-5 dark:border-zinc-100">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
-          <h2 className="text-lg font-semibold">Use with Claude: no format to learn</h2>
+          <p className="inline-block rounded-full bg-zinc-900 px-2.5 py-0.5 text-xs font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
+            Recommended
+          </p>
+          <h2 className="text-lg font-semibold">Write your scope with Claude</h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             Add the Agreement Hub skill to Claude once. Then just talk through your project and
-            ask for a scope document: Claude writes it in the right format, ready to import here.
+            ask for a scope document: Claude writes it ready to import, with no format to learn.
             It also updates the document after your client responds, without losing what was
             already agreed.
           </p>
@@ -46,19 +47,14 @@ export function SkillCard({ showGuideLink = false }: { showGuideLink?: boolean }
         </div>
       </div>
 
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        Then ask: <em>&quot;Make a scope document for the client.&quot;</em>
-        {showGuideLink && (
-          <>
-            {" "}
-            Using a different AI assistant?{" "}
-            <Link href="/guide#prompt" className="underline">
-              Copy our prompt instead
-            </Link>
-            .
-          </>
-        )}
-      </p>
+      <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <p>
+          Then ask: <em>&quot;Make a scope document for the client.&quot;</em>
+        </p>
+        <p>
+          Already have a document? Give it to Claude and ask it to prepare it for Agreement Hub.
+        </p>
+      </div>
     </section>
   );
 }

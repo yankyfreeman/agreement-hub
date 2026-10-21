@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SkillCard } from "@/components/skill-card";
 import { CopyText } from "@/components/ui";
 
-export const metadata: Metadata = { title: "Format guide · Agreement Hub" };
+export const metadata: Metadata = { title: "Write your scope · Agreement Hub" };
 
 const AI_PROMPT = `Write the agreed project scope as a Markdown document that I will share with my client for review. Follow this format exactly, because a tool imports it automatically:
 
@@ -64,18 +64,34 @@ export default function GuidePage() {
       </nav>
 
       <header className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight">Markdown format guide</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Write your scope document</h1>
         <p className="text-zinc-600 dark:text-zinc-400">
-          Agreement Hub turns a Markdown file into sections the client agrees to and questions
-          the client answers. The easiest way is to let Claude handle the format with our skill.
-          Otherwise, follow these rules or give your AI assistant the prompt below.
+          Agreement Hub turns your scope document into sections the client agrees to and
+          questions the client answers. You focus on the project; the skill takes care of the
+          rest.
         </p>
       </header>
 
       <SkillCard />
 
+      <header id="without-claude" className="scroll-mt-6 space-y-2 border-t border-zinc-200 pt-8 dark:border-zinc-800">
+        <h2 className="text-lg font-semibold">Not using Claude?</h2>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Give another AI assistant our prompt, or write the Markdown yourself using the rules
+          below.
+        </p>
+      </header>
+
+      <section id="prompt" className="scroll-mt-6 space-y-3">
+        <h3 className="font-semibold">Prompt for any AI assistant</h3>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Paste this at the end of your scope conversation with ChatGPT or any other assistant.
+        </p>
+        <CopyText text={AI_PROMPT} label="Copy prompt" />
+      </section>
+
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">What becomes what</h2>
+        <h3 className="font-semibold">Format rules</h3>
         <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
           <table className="w-full text-sm">
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -99,27 +115,18 @@ export default function GuidePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Updating a document</h2>
+        <h3 className="font-semibold">Updating a document</h3>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          After the client responds, update the Markdown (for example with your AI assistant) and
-          use <strong>Import an updated Markdown version</strong> on the developer page. Sections
-          are matched by heading text, then by number; questions by their Q number. Changed items
-          get a new version and need the client&apos;s response again. Unchanged items keep their
+          After the client responds, update the Markdown and use{" "}
+          <strong>Import an updated Markdown version</strong> on the developer page. Sections are
+          matched by heading text, then by number; questions by their Q number. Changed items get
+          a new version and need the client&apos;s response again. Unchanged items keep their
           agreement. Items no longer in the file are archived, with their history kept.
         </p>
       </section>
 
-      <section id="prompt" className="scroll-mt-6 space-y-3">
-        <h2 className="text-lg font-semibold">Prompt for any AI assistant</h2>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Not using the skill? Paste this at the end of your scope conversation with ChatGPT,
-          Claude or any other assistant.
-        </p>
-        <CopyText text={AI_PROMPT} label="Copy prompt" />
-      </section>
-
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Minimal example</h2>
+        <h3 className="font-semibold">Minimal example</h3>
         <CopyText text={EXAMPLE} label="Copy example" />
       </section>
     </main>

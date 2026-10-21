@@ -81,10 +81,9 @@ export function ImportForm({
           />
         </details>
         <p className="mt-1 text-xs text-zinc-500">
-          Sections come from <code>##</code> / <code>###</code> headings and questions from items
-          starting with <code>**Q1.**</code>.{" "}
+          Files from the Agreement Hub skill for Claude import as they are.{" "}
           <Link href="/guide" className="underline" target="_blank">
-            Format guide and AI prompt
+            Get the skill
           </Link>
         </p>
       </div>
@@ -104,7 +103,8 @@ export function ImportForm({
 
           {parsed.items.length === 0 ? (
             <p className="text-sm text-red-600">
-              No sections or questions found. Check the file against the format guide.
+              No sections or questions found. Ask Claude, with the Agreement Hub skill, to prepare
+              this document for Agreement Hub, then import the new file.
             </p>
           ) : (
             <>

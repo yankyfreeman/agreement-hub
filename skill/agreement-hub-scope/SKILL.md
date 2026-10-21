@@ -1,6 +1,6 @@
 ---
 name: agreement-hub-scope
-description: Writes and updates project scope documents (the functionality, requirements or proposal document a developer shares with a client for sign-off) in the Markdown format that Agreement Hub imports. Use whenever the user asks for a scope document, project scope, functionality document, requirements document or client proposal, wants to turn a project discussion or notes into one, or wants to update one after client feedback.
+description: Writes and updates project scope documents (the functionality, requirements or proposal document a developer shares with a client for sign-off) in the Markdown format that Agreement Hub imports. Use whenever the user asks for a scope document, project scope, functionality document, requirements document or client proposal, wants to turn a project discussion, notes or an existing document into one, asks to prepare a document for Agreement Hub, or wants to update one after client feedback.
 ---
 
 # Agreement Hub scope documents
@@ -19,6 +19,9 @@ them unless they ask.
    shared. If the basics are missing (what is being built, for whom, the main
    features), ask briefly. Don't hold the document up for details: anything
    still undecided becomes a question for the client.
+   If the user gives you an existing document, keep its content and wording, and
+   change only the structure: headings, numbering and question labels. Turn open
+   points and questions in it into numbered questions.
 2. **Write the document** in the format below. See `example.md` for a complete
    document.
 3. **Deliver it as a file** named after the project, e.g.
