@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SkillCard } from "@/components/skill-card";
 import { CopyText } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Format guide · Agreement Hub" };
@@ -66,9 +67,12 @@ export default function GuidePage() {
         <h1 className="text-2xl font-bold tracking-tight">Markdown format guide</h1>
         <p className="text-zinc-600 dark:text-zinc-400">
           Agreement Hub turns a Markdown file into sections the client agrees to and questions
-          the client answers. Follow these rules, or give your AI assistant the prompt below.
+          the client answers. The easiest way is to let Claude handle the format with our skill.
+          Otherwise, follow these rules or give your AI assistant the prompt below.
         </p>
       </header>
+
+      <SkillCard />
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">What becomes what</h2>
@@ -105,11 +109,11 @@ export default function GuidePage() {
         </p>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Prompt for your AI assistant</h2>
+      <section id="prompt" className="scroll-mt-6 space-y-3">
+        <h2 className="text-lg font-semibold">Prompt for any AI assistant</h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Paste this at the end of your scope conversation with ChatGPT, Claude or any other
-          assistant.
+          Not using the skill? Paste this at the end of your scope conversation with ChatGPT,
+          Claude or any other assistant.
         </p>
         <CopyText text={AI_PROMPT} label="Copy prompt" />
       </section>

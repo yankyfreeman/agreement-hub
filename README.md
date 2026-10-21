@@ -9,8 +9,10 @@ what was agreed, what was disputed, and how it was resolved.
 
 ## How it works
 
-1. **Write the scope with AI** and save it as a Markdown file. The format guide (`/guide`)
-   in the app has a prompt you can paste into your AI conversation.
+1. **Write the scope with AI** and save it as a Markdown file. The easiest way is the
+   Agreement Hub skill for Claude (`skill/`, downloadable from the home page), which
+   writes in the right format on its own. The format guide (`/guide`) also has a prompt
+   for any other AI assistant.
 2. **Import it** on the home page. A preview shows what becomes a section and what
    becomes a question; tick **Info only** on sections that need no agreement.
    You land on the developer page (`/manage/<secret>`). Bookmark it: it is the
@@ -106,6 +108,8 @@ src/
   db/                     Drizzle schema and connection
   lib/data.ts             queries, status logic, applying imports
   lib/markdown-import.ts  Markdown parsing and re-import matching
+skill/                    Claude skill that writes scope documents in this format
+public/agreement-hub-scope.zip   the skill, as served for download
 ```
 
 ## Possible next steps

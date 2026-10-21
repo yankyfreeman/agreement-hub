@@ -1,0 +1,113 @@
+---
+name: agreement-hub-scope
+description: Writes and updates project scope documents (the functionality, requirements or proposal document a developer shares with a client for sign-off) in the Markdown format that Agreement Hub imports. Use whenever the user asks for a scope document, project scope, functionality document, requirements document or client proposal, wants to turn a project discussion or notes into one, or wants to update one after client feedback.
+---
+
+# Agreement Hub scope documents
+
+Agreement Hub turns a Markdown file into a review page for the client: every
+section becomes an item the client agrees or disagrees with, and every question
+gets its own answer box. The format below is how the import tells them apart.
+
+The developer should never have to think about this format. They talk about the
+project; you produce a file that imports cleanly. Don't explain the format to
+them unless they ask.
+
+## Workflow
+
+1. **Gather the content** from the conversation and any notes or files the user
+   shared. If the basics are missing (what is being built, for whom, the main
+   features), ask briefly. Don't hold the document up for details: anything
+   still undecided becomes a question for the client.
+2. **Write the document** in the format below. See `example.md` for a complete
+   document.
+3. **Deliver it as a file** named after the project, e.g.
+   `booking-app-scope.md`, when you can create files. Otherwise put the whole
+   document in a single Markdown code block so it can be copied in one go.
+4. **Close with a short note** (a few lines, no format explanation):
+   - the file name, and how many sections and questions it has
+   - which sections to tick as **Info only** in the import preview: sections
+     the client doesn't need to agree to, such as "About this document" or
+     "Next steps". If there are none, skip this line.
+   - "Import it on the Agreement Hub home page."
+
+## Format
+
+### Title and introduction
+
+- The first line is the title: `# <Project name>: Project Scope`. This is the
+  only `#` heading in the whole document.
+- Directly under it, a few metadata lines, each on its own line:
+  `**Version:** 0.1 (draft for client review)`, `**Date:** 21 October 2026`,
+  and optionally `**Prepared for:**` and `**Prepared by:**`.
+- Everything before the first `##` heading becomes the introduction, so keep it
+  to these lines and at most one short sentence.
+
+### Sections
+
+- Main sections are numbered `##` headings: `## 3. Customer Website`.
+- Parts the client should agree to separately are numbered `###` headings
+  under them: `### 3.1 Booking`, `### 3.2 Payments`.
+- Every `##` or `###` heading with text under it becomes one item the client
+  agrees or disagrees with. Keep each one to a single topic, so the client can
+  agree to most of the document and push back on one part. Split a broad
+  section into `###` parts rather than writing one long section.
+- A `##` heading with no text of its own, only `###` parts below it, is just a
+  group heading. That's fine.
+- Inside a section, use whatever reads best: bullet lists, numbered steps,
+  tables, bold text, `>` notes, and `####` headings for small sub-parts
+  (`####` does not create a new item).
+- Keep section numbers unique and in order.
+- Write for a non-technical client: describe what they get and how it behaves,
+  not how it is built. Mention technology only when it affects the client
+  (cost, hosting, accounts they must own).
+- Make assumptions and exclusions explicit inside the relevant section
+  ("Not included: ..."). It is what the client is agreeing to.
+
+### Questions for the client
+
+- Put every question in one section near the end: `## 7. Questions for you`.
+- Each question is a bullet starting with a bold number:
+  `- **Q1.** How far ahead can customers book?`
+- Number them Q1, Q2, Q3... in order. Never reuse a number.
+- Group them with a bold line on its own directly above a group's list:
+  `**Payments**`.
+- Do **not** put questions inside feature sections. A section that contains
+  questions is turned into info only, so the client could no longer agree to
+  it. Instead, point to the question from the section: "(see Q2)". "see Q2"
+  becomes a link to that question.
+- One decision per question. Where it helps, offer options or your suggested
+  default in the same item:
+  `- **Q4.** Is the deposit refundable? Our suggestion: yes, up to 24 hours before the appointment.`
+- A question can run over several lines: indent the extra lines or nested
+  bullets by two spaces under it.
+
+### Avoid
+
+- A second `#` heading anywhere: only the first one is the title.
+- Questions written without the `**Qn.**` label: they would be read as plain
+  text, with no answer box.
+- Text before the first `##` other than the title and metadata: it ends up in
+  the introduction.
+
+## Updating an existing document
+
+When the user brings back client feedback, or asks to change a document that is
+already in Agreement Hub, start from the latest version of the file and edit it.
+Don't rewrite it from scratch. Re-importing compares the new file with the old
+one, and these rules keep the client's earlier agreements:
+
+- **Keep section headings word for word** unless the section really changes.
+  Sections are matched by heading text, ignoring the number, so renumbering is
+  fine, but rewording a heading starts a new item and archives the old one.
+- **Only touch sections that actually change.** Any change to a section's text
+  sends it back to the client for review; unchanged sections keep their
+  agreement.
+- **Keep question numbers.** Remove questions the client has answered (their
+  answers stay in Agreement Hub) and write the decision into the relevant
+  section. New questions take the next unused number. Never renumber or reuse.
+- Bump **Version** and **Date**.
+
+Close with a short note listing which sections changed (the client will review
+them again), which questions were added or removed, and "Import it with
+**Import an updated Markdown version** on the developer page."
