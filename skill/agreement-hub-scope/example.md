@@ -7,15 +7,11 @@
 
 ## 1. About this document
 
-This document describes what we will build. Please go through each section and
-tell us whether you agree, and answer the questions at the end. Anything you
-disagree with, we will discuss and update.
+This document describes what we will build. Please go through each section and tell us whether you agree, and answer the questions at the end. Anything you disagree with, we will discuss and update.
 
 ## 2. What we are building
 
-An online booking system for the clinic: patients book appointments on the
-website, get reminders by SMS, and staff manage the calendar from an admin
-panel.
+An online booking system for the clinic: patients book appointments on the website, get reminders by SMS, and staff manage the calendar from an admin panel.
 
 **Not included:** patient medical records, insurance claims, a mobile app.
 
@@ -63,10 +59,8 @@ panel.
 - **Q3.** Is 24 hours the right cut-off for changes and cancellations?
 
 **Costs**
-- **Q4.** Do you already have an SMS provider account, or should we set one up
-  in the clinic's name?
+- **Q4.** Do you already have an SMS provider account, or should we set one up in the clinic's name?
 
 ## 7. Next steps
 
-After you have reviewed everything, we will send an updated version with your
-answers included, followed by the timeline and quote.
+After you have reviewed everything, we will send an updated version with your answers included, followed by the timeline and quote.

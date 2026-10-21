@@ -3,6 +3,7 @@ import { reimportAction, updateDocumentAction } from "@/app/actions";
 import { toExistingItems, type DocumentView as View, type SectionView } from "@/lib/data";
 import { ImportForm } from "./import-form";
 import { Markdown } from "./markdown";
+import { Outline, type OutlineEntry } from "./outline";
 import { QuestionsBlock } from "./questions-block";
 import { SectionBlock } from "./section-card";
 import { SummaryLine } from "./status";
@@ -32,6 +33,60 @@ function toBlocks(items: SectionView[]): Block[] {
   return blocks;
 }
 
+/**
+ * Contents entries: group headings, sections under them, and the questions
+ * by group with how many are answered. Targets are the ids rendered below.
+ */
+function toOutline(blocks: Block[]): OutlineEntry[] {
+  const entries: OutlineEntry[] = [];
+  for (const block of blocks) {
+    if (block.type === "section") {
+      const { section, heading } = block;
+      if (heading) {
+        entries.push({ target: `group-${section.id}`, label: heading, level: 0, status: null });
+      }
+      entries.push({
+        target: `section-${section.id}`,
+        label: section.current.title,
+        level: section.group ? 1 : 0,
+        status: section.status,
+      });
+      continue;
+    }
+
+    const groups: SectionView[][] = [];
+    for (const q of block.questions) {
+      const last = groups.at(-1);
+      if (last && last[0].group === q.group) last.push(q);
+      else groups.push([q]);
+    }
+    const summary = (qs: SectionView[]) => ({
+      note: `${qs.filter((q) => q.status === "answered").length}/${qs.length}`,
+      status: qs.some((q) => q.status === "followup")
+        ? ("followup" as const)
+        : qs.every((q) => q.status === "answered")
+          ? ("answered" as const)
+          : null,
+    });
+    const all = block.questions;
+    const label = groups.length === 1 ? (all[0].group ?? "Questions") : "Questions";
+    entries.push({ target: questionsId(all), label, level: 0, ...summary(all) });
+    if (groups.length > 1) {
+      for (const qs of groups) {
+        entries.push({
+          target: `qgroup-${qs[0].id}`,
+          label: qs[0].group ?? "Questions",
+          level: 1,
+          ...summary(qs),
+        });
+      }
+    }
+  }
+  return entries;
+}
+
+const questionsId = (questions: SectionView[]) => `questions-${questions[0].id}`;
+
 export function DocumentView({ view, token }: { view: View; token: string }) {
   const { document: doc, role, sections } = view;
   const isDeveloper = role === "developer";
@@ -39,92 +94,111 @@ export function DocumentView({ view, token }: { view: View; token: string }) {
   const archived = sections.filter((s) => s.archived);
   const questionKeys = new Set(live.filter((s) => s.kind === "question").map((s) => s.key));
   const props = { role, token, questionKeys };
+  const blocks = toBlocks(live);
+  const outline = toOutline(blocks);
+  const showOutline = outline.length > 2;
 
   return (
     <div className="flex-1 bg-zinc-100 print:bg-white dark:bg-zinc-900/60">
-      <main className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8 print:p-0">
-        <nav className="flex items-center justify-between print:hidden">
-          <Link href="/" className="text-sm font-semibold">
-            Agreement Hub
-          </Link>
-          <PrintButton />
-        </nav>
+      <div className="mx-auto flex w-full max-w-6xl gap-8 px-4 py-8 print:block print:p-0">
+        {showOutline && (
+          <aside className="hidden w-56 shrink-0 lg:block print:hidden">
+            <Outline entries={outline} variant="sidebar" />
+          </aside>
+        )}
+        <main className="mx-auto w-full min-w-0 max-w-4xl space-y-6">
+          <nav className="flex items-center justify-between print:hidden">
+            <Link href="/" className="text-sm font-semibold">
+              Agreement Hub
+            </Link>
+            <PrintButton />
+          </nav>
 
-        {isDeveloper && <DeveloperPanel view={view} token={token} />}
+          {isDeveloper && <DeveloperPanel view={view} token={token} />}
 
-        {/* The document itself, laid out like a printed page */}
-        <article className="doc rounded-sm bg-white px-5 py-10 shadow-sm ring-1 ring-zinc-200 sm:px-16 sm:py-14 print:px-0 print:py-0 print:shadow-none print:ring-0 dark:bg-zinc-950 dark:ring-zinc-800">
-          <header className="mb-8 space-y-3 border-b border-zinc-200 pb-6 dark:border-zinc-800">
-            <h1 className="text-3xl font-bold leading-tight tracking-tight">{doc.title}</h1>
-            <p className="font-sans text-sm text-zinc-500">
-              Between <strong className="font-medium text-zinc-700 dark:text-zinc-300">{doc.clientName}</strong>{" "}
-              (client) and{" "}
-              <strong className="font-medium text-zinc-700 dark:text-zinc-300">{doc.developerName}</strong>{" "}
-              (developer) · last activity <LocalTime iso={doc.updatedAt.toISOString()} />
-            </p>
-            <SummaryLine sections={sections} />
-            {doc.intro && (
-              <div className="text-zinc-700 dark:text-zinc-300">
-                <Markdown text={doc.intro} />
-              </div>
-            )}
-            {live.length > 0 && (
-              <p className="font-sans text-xs text-zinc-500 print:hidden">
-                {isDeveloper
-                  ? "Hover over a section to reply or edit it, or over a question to reply."
-                  : "Hover over a section (or tap the icons beside it) to agree, disagree or comment. Questions have a box for your answer."}
+          {showOutline && <Outline entries={outline} variant="inline" />}
+
+          {/* The document itself, laid out like a printed page */}
+          <article className="doc rounded-sm bg-white px-5 py-10 shadow-sm ring-1 ring-zinc-200 sm:px-16 sm:py-14 print:px-0 print:py-0 print:shadow-none print:ring-0 dark:bg-zinc-950 dark:ring-zinc-800">
+            <header className="mb-8 space-y-3 border-b border-zinc-200 pb-6 dark:border-zinc-800">
+              <h1 className="text-3xl font-bold leading-tight tracking-tight">{doc.title}</h1>
+              <p className="font-sans text-sm text-zinc-500">
+                Between <strong className="font-medium text-zinc-700 dark:text-zinc-300">{doc.clientName}</strong>{" "}
+                (client) and{" "}
+                <strong className="font-medium text-zinc-700 dark:text-zinc-300">{doc.developerName}</strong>{" "}
+                (developer) · last activity <LocalTime iso={doc.updatedAt.toISOString()} />
               </p>
-            )}
-          </header>
-
-          <div className="space-y-2">
-            {toBlocks(live).map((block) =>
-              block.type === "questions" ? (
-                <QuestionsBlock
-                  key={`q-${block.questions[0].id}`}
-                  questions={block.questions}
-                  {...props}
-                />
-              ) : (
-                <div key={block.section.id}>
-                  {block.heading && (
-                    <h2 className="mb-1 mt-8 text-2xl font-bold tracking-tight">{block.heading}</h2>
-                  )}
-                  <SectionBlock section={block.section} {...props} />
+              <SummaryLine sections={sections} />
+              {doc.intro && (
+                <div className="text-zinc-700 dark:text-zinc-300">
+                  <Markdown text={doc.intro} />
                 </div>
-              ),
-            )}
-            {live.length === 0 && (
-              <p className="py-8 text-center font-sans text-sm text-zinc-500">Nothing to review yet.</p>
-            )}
-          </div>
+              )}
+              {live.length > 0 && (
+                <p className="font-sans text-xs text-zinc-500 print:hidden">
+                  {isDeveloper
+                    ? "Hover over a section to reply or edit it, or over a question to reply."
+                    : "Hover over a section (or tap the icons beside it) to agree, disagree or comment. Questions have a box for your answer."}
+                </p>
+              )}
+            </header>
 
-          {archived.length > 0 && (
-            <details className="mt-12 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-              <summary className="cursor-pointer font-sans text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                Removed in later versions ({archived.length})
-              </summary>
-              <p className="mt-2 font-sans text-xs text-zinc-500">
-                These items are no longer in the document. They are kept, with their responses,
-                for the record.
-              </p>
-              <div className="mt-4 space-y-2 opacity-75">
-                {toBlocks(archived).map((block) =>
-                  block.type === "questions" ? (
-                    <QuestionsBlock
-                      key={`aq-${block.questions[0].id}`}
-                      questions={block.questions}
-                      {...props}
-                    />
-                  ) : (
-                    <SectionBlock key={block.section.id} section={block.section} {...props} />
-                  ),
-                )}
-              </div>
-            </details>
-          )}
-        </article>
-      </main>
+            <div className="space-y-2">
+              {blocks.map((block) =>
+                block.type === "questions" ? (
+                  <div
+                    key={`q-${block.questions[0].id}`}
+                    id={questionsId(block.questions)}
+                    className="scroll-mt-6"
+                  >
+                    <QuestionsBlock questions={block.questions} {...props} />
+                  </div>
+                ) : (
+                  <div key={block.section.id}>
+                    {block.heading && (
+                      <h2
+                        id={`group-${block.section.id}`}
+                        className="mb-1 mt-8 scroll-mt-6 text-2xl font-bold tracking-tight"
+                      >
+                        {block.heading}
+                      </h2>
+                    )}
+                    <SectionBlock section={block.section} {...props} />
+                  </div>
+                ),
+              )}
+              {live.length === 0 && (
+                <p className="py-8 text-center font-sans text-sm text-zinc-500">Nothing to review yet.</p>
+              )}
+            </div>
+
+            {archived.length > 0 && (
+              <details className="mt-12 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+                <summary className="cursor-pointer font-sans text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  Removed in later versions ({archived.length})
+                </summary>
+                <p className="mt-2 font-sans text-xs text-zinc-500">
+                  These items are no longer in the document. They are kept, with their responses,
+                  for the record.
+                </p>
+                <div className="mt-4 space-y-2 opacity-75">
+                  {toBlocks(archived).map((block) =>
+                    block.type === "questions" ? (
+                      <QuestionsBlock
+                        key={`aq-${block.questions[0].id}`}
+                        questions={block.questions}
+                        {...props}
+                      />
+                    ) : (
+                      <SectionBlock key={block.section.id} section={block.section} {...props} />
+                    ),
+                  )}
+                </div>
+              </details>
+            )}
+          </article>
+        </main>
+      </div>
     </div>
   );
 }

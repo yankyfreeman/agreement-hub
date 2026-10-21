@@ -82,11 +82,13 @@ them unless they ask.
 - One decision per question. Where it helps, offer options or your suggested
   default in the same item:
   `- **Q4.** Is the deposit refundable? Our suggestion: yes, up to 24 hours before the appointment.`
-- A question can run over several lines: indent the extra lines or nested
-  bullets by two spaces under it.
+- If a question needs options listed under it, indent them as nested bullets
+  by two spaces.
 
 ### Avoid
 
+- Wrapping lines by hand. Agreement Hub keeps every line break, so write each
+  paragraph, list item and question on a single line, however long.
 - A second `#` heading anywhere: only the first one is the title.
 - Questions written without the `**Qn.**` label: they would be read as plain
   text, with no answer box.

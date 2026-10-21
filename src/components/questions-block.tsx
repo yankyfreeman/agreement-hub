@@ -60,7 +60,11 @@ function QuestionItem({
 
   return (
     <>
-      {showGroup && q.group && <h3 className="pt-5 pb-1 text-lg font-semibold">{q.group}</h3>}
+      {showGroup && q.group && (
+        <h3 id={`qgroup-${q.id}`} className="scroll-mt-6 pt-5 pb-1 text-lg font-semibold">
+          {q.group}
+        </h3>
+      )}
       <article
         id={`q-${number}`}
         className={`group relative -ml-4 scroll-mt-4 break-inside-avoid border-l-2 py-2 pl-[14px] pr-10 sm:pr-0 ${MARKER[q.status]}`}

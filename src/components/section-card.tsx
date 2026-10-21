@@ -68,7 +68,7 @@ export function SectionBlock({
   return (
     <article
       id={`section-${section.id}`}
-      className={`group relative -ml-4 break-inside-avoid border-l-2 py-2 pl-[14px] pr-10 sm:pr-0 ${MARKER[section.status]}`}
+      className={`group relative -ml-4 scroll-mt-6 break-inside-avoid border-l-2 py-2 pl-[14px] pr-10 sm:pr-0 ${MARKER[section.status]}`}
     >
       <h3 className="mb-1 text-lg font-semibold">{current.title}</h3>
       {current.body ? (
