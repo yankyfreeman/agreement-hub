@@ -91,7 +91,7 @@ function QuestionItem({
               open={q.status !== "answered"}
             />
           )}
-          <ItemMeta section={q} />
+          <ItemMeta section={q} shownId={q.status === "answered" ? answer?.id : undefined} />
         </div>
 
         {role === "developer" && (

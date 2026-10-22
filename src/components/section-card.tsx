@@ -88,12 +88,15 @@ export function SectionBlock({
 }
 
 /**
- * One quiet line under a block ("Agreed · 2 messages · 1 earlier version")
- * that expands into the conversation and older versions.
+ * One quiet line under a block ("Agreed · 2 messages · previous version")
+ * that expands into the conversation and the previous version. `shownId` is a
+ * message already displayed in the document (a question's answer), left out
+ * here so it isn't shown twice.
  */
-export function ItemMeta({ section }: { section: SectionView }) {
+export function ItemMeta({ section, shownId }: { section: SectionView; shownId?: number }) {
   const status = STATUS_TEXT[section.status];
-  const count = section.messages.length;
+  const messages = section.messages.filter((m) => m.id !== shownId);
+  const count = messages.length;
   const earlier = section.history.length;
   if (!status && !count && !earlier) return null;
 
@@ -101,16 +104,20 @@ export function ItemMeta({ section }: { section: SectionView }) {
     count ? `${count} ${count === 1 ? "message" : "messages"}` : null,
     earlier ? "previous version" : null,
   ].filter(Boolean);
+  const statusLabel = status && (
+    <span className={`font-medium ${status.className}`}>{status.label}</span>
+  );
 
+  if (!parts.length) return <p className="mt-2 font-sans text-xs">{statusLabel}</p>;
   return (
     <details className="mt-2 font-sans text-xs">
       <summary className="cursor-pointer list-none text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 [&::-webkit-details-marker]:hidden">
-        {status && <span className={`font-medium ${status.className}`}>{status.label}</span>}
-        {status && parts.length > 0 && " · "}
+        {statusLabel}
+        {status && " · "}
         <span className="underline decoration-dotted underline-offset-2">{parts.join(" · ")}</span>
       </summary>
       <div className="mt-3 space-y-3 text-sm">
-        <Thread messages={section.messages} currentVersion={section.current.version} />
+        <Thread messages={messages} currentVersion={section.current.version} />
         <History section={section} />
       </div>
     </details>
