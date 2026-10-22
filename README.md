@@ -156,6 +156,7 @@ src/
   lib/mcp.ts              MCP tools
   lib/rate-limit.ts       rate limits for imports and MCP
   lib/record.ts           the conversation record export
+docs/project-notes.md     every decision so far and why
 skill/                    Claude skill that writes scope documents in this format
 public/agreement-hub-scope.zip   the skill, as served for download
 ```
