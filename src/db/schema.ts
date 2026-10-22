@@ -38,13 +38,12 @@ export const sections = pgTable("sections", {
   groupLabel: text("group_label"),
   // Shown for context only; no agreement needed and excluded from the status.
   infoOnly: boolean("info_only").notNull().default(false),
-  // Set when a later import no longer contains the item. Kept for the record.
-  archivedAt: timestamp("archived_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Sections are never edited in place: every change adds a new version so the
-// record shows exactly what text each response was made against.
+// Sections are not edited in place: every change adds a new version, so each
+// response shows which text it was made against. Only the current and previous
+// versions are kept (see pruneHistory); the developer's project keeps the rest.
 export const sectionVersions = pgTable(
   "section_versions",
   {
@@ -79,7 +78,7 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Every Markdown file imported into a document, kept verbatim for the record.
+// The last two Markdown files imported into a document, kept verbatim.
 export const imports = pgTable("imports", {
   id: serial("id").primaryKey(),
   documentId: integer("document_id")
@@ -124,7 +123,14 @@ export const SCHEMA_SQL = [
   `ALTER TABLE sections ADD COLUMN IF NOT EXISTS key text NOT NULL DEFAULT ''`,
   `ALTER TABLE sections ADD COLUMN IF NOT EXISTS group_label text`,
   `ALTER TABLE sections ADD COLUMN IF NOT EXISTS info_only boolean NOT NULL DEFAULT false`,
-  `ALTER TABLE sections ADD COLUMN IF NOT EXISTS archived_at timestamptz`,
+  // Items removed by an import used to be archived; they are now deleted.
+  `DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+               WHERE table_name = 'sections' AND column_name = 'archived_at') THEN
+      DELETE FROM sections WHERE archived_at IS NOT NULL;
+      ALTER TABLE sections DROP COLUMN archived_at;
+    END IF;
+  END $$`,
   `CREATE TABLE IF NOT EXISTS section_versions (
     id serial PRIMARY KEY,
     section_id integer NOT NULL REFERENCES sections(id) ON DELETE CASCADE,

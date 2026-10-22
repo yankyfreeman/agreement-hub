@@ -2,9 +2,8 @@ import type { SectionView } from "@/lib/data";
 
 /** One line under the title: "3 of 14 sections agreed · 1 disagreed · 2 of 19 questions answered" */
 export function SummaryLine({ sections }: { sections: SectionView[] }) {
-  const live = sections.filter((s) => !s.archived);
-  const reviewable = live.filter((s) => s.kind === "section" && !s.infoOnly);
-  const questions = live.filter((s) => s.kind === "question");
+  const reviewable = sections.filter((s) => s.kind === "section" && !s.infoOnly);
+  const questions = sections.filter((s) => s.kind === "question");
   const n = (items: SectionView[], status: SectionView["status"]) =>
     items.filter((s) => s.status === status).length;
 

@@ -57,13 +57,7 @@ export function SectionBlock({
   questionKeys: Set<string>;
 }) {
   const { current } = section;
-  const mode = section.archived
-    ? null
-    : role === "developer"
-      ? "dev-section"
-      : section.infoOnly
-        ? "info"
-        : "section";
+  const mode = role === "developer" ? "dev-section" : section.infoOnly ? "info" : "section";
 
   return (
     <article
@@ -105,7 +99,7 @@ export function ItemMeta({ section }: { section: SectionView }) {
 
   const parts = [
     count ? `${count} ${count === 1 ? "message" : "messages"}` : null,
-    earlier ? `${earlier} earlier ${earlier === 1 ? "version" : "versions"}` : null,
+    earlier ? "previous version" : null,
   ].filter(Boolean);
 
   return (
@@ -127,7 +121,7 @@ function History({ section }: { section: SectionView }) {
   if (!section.history.length) return null;
   return (
     <div>
-      <p className="mb-1 text-xs font-medium text-zinc-500">Earlier versions</p>
+      <p className="mb-1 text-xs font-medium text-zinc-500">Previous version</p>
       <ol className="space-y-3 border-l-2 border-zinc-200 pl-3 dark:border-zinc-700">
         {section.history.map((v) => (
           <li key={v.id}>

@@ -4,8 +4,8 @@ A simple web app that keeps a client and a developer on the same page.
 
 The developer publishes a functionality / scope document at a shareable URL.
 The client reads it and responds right under each section: agree, disagree,
-or ask a question. Every response and reply is kept as a permanent record of
-what was agreed, what was disputed, and how it was resolved.
+or ask a question. Agreement Hub holds the latest state; the developer's project
+holds the full history of the document and the conversation.
 
 ## How it works
 
@@ -22,6 +22,9 @@ what was agreed, what was disputed, and how it was resolved.
 5. You **reply** in the same threads, or ask for more detail on a question.
 6. **Import the next version** of the Markdown into the same document when the
    scope changes.
+7. **Keep the history in your project**: download the document and its
+   conversation record from the developer page after each update and commit
+   them. The skill does this for you when Claude is connected.
 
 ### Connect Claude (MCP)
 
@@ -34,7 +37,7 @@ under Customize → Connectors, or in Claude Code with
 |---|---|
 | `create_document` | Publishes Markdown; returns the developer and client links |
 | `get_open_items` | What needs the developer: disagreements, questions, answers, what's waiting |
-| `get_document` | The whole record: every item's status and conversation |
+| `get_document` | The conversation record: every item's status and messages, to save in the project |
 | `reply` | Replies on a section or question, or asks for more detail on a question |
 | `get_markdown` | The current document as Markdown, ready to edit |
 | `preview_update` / `apply_update` | Shows what an updated version would change, then imports it |
@@ -66,17 +69,24 @@ Parsing lives in `src/lib/markdown-import.ts` and runs both in the browser
 - **Changed** items get a new version and need the client's response again.
 - **Unchanged** items keep their agreement. A number-only change (4.5 → 4.6)
   counts as unchanged.
-- Items **missing** from the new file are archived under "Removed in later
-  versions", with their responses.
-- Every imported file is stored and can be downloaded from "Import history".
+- Items **missing** from the new file are deleted, with their responses.
+- The last two imported files can be downloaded from "Recent imports".
 
-Rules that keep the record honest:
+### What is kept
 
-- Nothing is deleted. Changes create new versions; old versions stay visible
-  under "Previous versions".
-- Status is always about the **current** version of an item.
-- Every message shows who wrote it, when, and which version it was about.
-- "Print / save PDF" produces a clean copy of the full record.
+Agreement Hub keeps only what is needed to review the current state; the
+developer's project keeps the history (`pruneHistory` in `src/db/index.ts`
+runs after every change and on each cold start):
+
+- The **current and previous version** of each section and question, and the
+  messages written about them. Older versions and their messages are deleted.
+- The **last two** imported files.
+- On the developer page, **Document (.md)** and **Conversation record (.md)**
+  download the current document and every item's status and messages
+  (`src/lib/record.ts`; no links, so it is safe to commit).
+
+Status is always about the **current** version of an item, and every message
+shows who wrote it, when, and which version it was about.
 
 There are no accounts. Access is by link only: whoever has the developer link
 can edit, and whoever has the client link can respond. Pages are marked
@@ -131,6 +141,7 @@ src/
   lib/markdown-import.ts  Markdown parsing, re-import matching and export
   lib/mcp.ts              MCP tools
   lib/rate-limit.ts       rate limits for imports and MCP
+  lib/record.ts           the conversation record export
 skill/                    Claude skill that writes scope documents in this format
 public/agreement-hub-scope.zip   the skill, as served for download
 ```

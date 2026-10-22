@@ -1,9 +1,10 @@
 import { randomBytes } from "node:crypto";
-import { and, asc, desc, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or } from "drizzle-orm";
 import {
   documents,
   getDb,
   imports,
+  pruneHistory,
   messages,
   sections,
   sectionVersions,
@@ -44,9 +45,9 @@ export type SectionView = {
   key: string;
   group: string | null;
   infoOnly: boolean;
-  archived: boolean;
   current: SectionVersion;
-  history: SectionVersion[]; // older versions, newest first
+  /** The previous version, if any (only one is kept). */
+  history: SectionVersion[];
   messages: Message[];
   status: Status;
 };
@@ -162,7 +163,6 @@ export async function loadDocument(token: string): Promise<DocumentView | null> 
         key: s.key,
         group: s.groupLabel,
         infoOnly: s.infoOnly,
-        archived: s.archivedAt !== null,
         current,
         history: vs.slice(0, -1).reverse(),
         messages: ms,
@@ -182,7 +182,6 @@ export function toExistingItems(view: DocumentView): ExistingItem[] {
     title: s.current.title,
     body: s.current.body,
     infoOnly: s.infoOnly,
-    archived: s.archived,
   }));
 }
 
@@ -194,9 +193,13 @@ export function documentMarkdown(view: DocumentView) {
   return toMarkdown({
     title: view.document.title,
     intro: view.document.intro,
-    items: view.sections
-      .filter((s) => !s.archived)
-      .map((s) => ({ kind: s.kind, key: s.key, title: s.current.title, body: s.current.body, group: s.group })),
+    items: view.sections.map((s) => ({
+      kind: s.kind,
+      key: s.key,
+      title: s.current.title,
+      body: s.current.body,
+      group: s.group,
+    })),
   });
 }
 
@@ -262,7 +265,6 @@ async function applyImport(
 ) {
   const db = await getDb();
   const plan = planImport(existing, parsed.items);
-  const now = new Date();
   const fields = (item: ParsedDocument["items"][number], position: number) => ({
     position,
     kind: item.kind,
@@ -292,7 +294,7 @@ async function applyImport(
   }
 
   // Matched items: refresh their place in the outline; changed text becomes a
-  // new version (old versions and their responses stay in the record).
+  // new version (the previous one is kept, older ones are pruned below).
   const matched = plan.matches.flatMap((m, i) =>
     m.existing ? [{ ...m, existing: m.existing, position: i + 1 }] : [],
   );
@@ -312,7 +314,7 @@ async function applyImport(
     ...matched.map((m) =>
       db
         .update(sections)
-        .set({ ...fields(m.item, m.position), archivedAt: null })
+        .set(fields(m.item, m.position))
         .where(eq(sections.id, m.existing.id)),
     ),
     // A heading number change (4.5 → 4.6) is not a change in what was agreed,
@@ -342,11 +344,9 @@ async function applyImport(
     );
   }
 
+  // Items no longer in the file are deleted with their versions and messages.
   if (plan.removed.length) {
-    await db
-      .update(sections)
-      .set({ archivedAt: now })
-      .where(inArray(sections.id, plan.removed.map((e) => e.id)));
+    await db.delete(sections).where(inArray(sections.id, plan.removed.map((e) => e.id)));
   }
 
   await db.insert(imports).values({
@@ -355,6 +355,7 @@ async function applyImport(
     markdown: input.markdown,
     summary: summarizePlan(plan),
   });
+  await pruneHistory(db, documentId);
   await touch(documentId);
 }
 
@@ -371,19 +372,13 @@ export async function getImportMarkdown(documentId: number, importId: number) {
 // ---------------------------------------------------------------------------
 // Edits and responses
 
-/** Returns the item if it belongs to the document and is not archived. */
+/** Returns the item if it belongs to the document. */
 async function liveItem(documentId: number, sectionId: number) {
   const db = await getDb();
   const [item] = await db
     .select({ id: sections.id, kind: sections.kind, infoOnly: sections.infoOnly })
     .from(sections)
-    .where(
-      and(
-        eq(sections.id, sectionId),
-        eq(sections.documentId, documentId),
-        isNull(sections.archivedAt),
-      ),
-    )
+    .where(and(eq(sections.id, sectionId), eq(sections.documentId, documentId)))
     .limit(1);
   return item ?? null;
 }
@@ -415,6 +410,7 @@ export async function reviseSection(
     title,
     body,
   });
+  await pruneHistory(db, documentId);
   await touch(documentId);
 }
 

@@ -33,7 +33,7 @@ export function QuestionsBlock({
     />
   ));
 
-  if (role === "developer" || questions.every((q) => q.archived)) {
+  if (role === "developer") {
     return <div className="space-y-1">{items}</div>;
   }
   return <QuestionsForm action={submitAnswersAction.bind(null, token)}>{items}</QuestionsForm>;
@@ -82,7 +82,7 @@ function QuestionItem({
               {answer.body}
             </p>
           )}
-          {role === "client" && !q.archived && (
+          {role === "client" && (
             <AnswerField
               // Remount when the answer or status changes, so the box collapses after sending.
               key={`${q.status}-${answer?.id ?? 0}`}
@@ -94,7 +94,7 @@ function QuestionItem({
           <ItemMeta section={q} />
         </div>
 
-        {role === "developer" && !q.archived && (
+        {role === "developer" && (
           <ItemActions mode="dev-question" respond={postMessageAction.bind(null, token, q.id)} />
         )}
       </article>

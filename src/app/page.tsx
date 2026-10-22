@@ -9,7 +9,7 @@ const STEPS = [
   ["Write the scope with Claude", "Plan the project with Claude and our skill. It gives you a file that is ready to import."],
   ["Import it", "Sections and Q1, Q2… questions are picked up automatically. Check the preview."],
   ["Share one link", "The client agrees or disagrees per section and answers the questions in one go."],
-  ["Update and keep the record", "Re-import the next version. Changes are versioned; nothing is lost."],
+  ["Update and keep the record", "Re-import the next version. Your project keeps the full history; Agreement Hub keeps the latest two."],
 ];
 
 export default function Home() {

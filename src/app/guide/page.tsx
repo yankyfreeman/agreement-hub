@@ -124,7 +124,10 @@ export default function GuidePage() {
           <strong>Import an updated Markdown version</strong> on the developer page. Sections are
           matched by heading text, then by number; questions by their Q number. Changed items get
           a new version and need the client&apos;s response again. Unchanged items keep their
-          agreement. Items no longer in the file are archived, with their history kept.
+          agreement. Items no longer in the file are deleted with their responses. Agreement Hub
+          keeps only the current and previous version of each item, so download the document and
+          its conversation record from the developer page after each update and keep them in
+          your project.
         </p>
       </section>
 

@@ -90,11 +90,9 @@ const questionsId = (questions: SectionView[]) => `questions-${questions[0].id}`
 export function DocumentView({ view, token }: { view: View; token: string }) {
   const { document: doc, role, sections } = view;
   const isDeveloper = role === "developer";
-  const live = sections.filter((s) => !s.archived);
-  const archived = sections.filter((s) => s.archived);
-  const questionKeys = new Set(live.filter((s) => s.kind === "question").map((s) => s.key));
+  const questionKeys = new Set(sections.filter((s) => s.kind === "question").map((s) => s.key));
   const props = { role, token, questionKeys };
-  const blocks = toBlocks(live);
+  const blocks = toBlocks(sections);
   const outline = toOutline(blocks);
   const showOutline = outline.length > 2;
 
@@ -134,7 +132,7 @@ export function DocumentView({ view, token }: { view: View; token: string }) {
                   <Markdown text={doc.intro} />
                 </div>
               )}
-              {live.length > 0 && (
+              {sections.length > 0 && (
                 <p className="font-sans text-xs text-zinc-500 print:hidden">
                   {isDeveloper
                     ? "Hover over a section to reply or edit it, or over a question to reply."
@@ -167,35 +165,10 @@ export function DocumentView({ view, token }: { view: View; token: string }) {
                   </div>
                 ),
               )}
-              {live.length === 0 && (
+              {sections.length === 0 && (
                 <p className="py-8 text-center font-sans text-sm text-zinc-500">Nothing to review yet.</p>
               )}
             </div>
-
-            {archived.length > 0 && (
-              <details className="mt-12 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-                <summary className="cursor-pointer font-sans text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                  Removed in later versions ({archived.length})
-                </summary>
-                <p className="mt-2 font-sans text-xs text-zinc-500">
-                  These items are no longer in the document. They are kept, with their responses,
-                  for the record.
-                </p>
-                <div className="mt-4 space-y-2 opacity-75">
-                  {toBlocks(archived).map((block) =>
-                    block.type === "questions" ? (
-                      <QuestionsBlock
-                        key={`aq-${block.questions[0].id}`}
-                        questions={block.questions}
-                        {...props}
-                      />
-                    ) : (
-                      <SectionBlock key={block.section.id} section={block.section} {...props} />
-                    ),
-                  )}
-                </div>
-              </details>
-            )}
           </article>
         </main>
       </div>
@@ -217,6 +190,23 @@ function DeveloperPanel({ view, token }: { view: View; token: string }) {
         </div>
       </div>
 
+      <div className="space-y-2 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+        <p className="text-sm font-medium">Keep a copy in your project</p>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Agreement Hub keeps only the current and previous version of each section, with the
+          messages about them. After each update, save both files in your project (and commit
+          them) so you keep the full history.
+        </p>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          <a href={`/manage/${token}/export/document`} className="underline" download>
+            Document (.md)
+          </a>
+          <a href={`/manage/${token}/export/record`} className="underline" download>
+            Conversation record (.md)
+          </a>
+        </div>
+      </div>
+
       <details className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
         <summary className="cursor-pointer text-sm font-medium">
           Import an updated Markdown version
@@ -233,7 +223,7 @@ function DeveloperPanel({ view, token }: { view: View; token: string }) {
       {view.imports.length > 0 && (
         <details className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
           <summary className="cursor-pointer text-sm font-medium">
-            Import history ({view.imports.length})
+            Recent imports ({view.imports.length})
           </summary>
           <ul className="mt-3 divide-y divide-zinc-100 text-sm dark:divide-zinc-800">
             {view.imports.map((imp) => (

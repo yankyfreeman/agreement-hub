@@ -275,10 +275,9 @@ export type ExistingItem = {
   title: string;
   body: string;
   infoOnly: boolean;
-  archived: boolean;
 };
 
-export type Change = "new" | "changed" | "unchanged" | "restored";
+export type Change = "new" | "changed" | "unchanged";
 
 export type ImportPlan = {
   matches: {
@@ -298,8 +297,8 @@ const bare = (title: string) => norm(title.replace(NUMBERED_HEADING, ""));
 /**
  * Pairs each parsed item with an existing one. Sections match by heading text
  * ignoring its number (so inserting a section and renumbering the rest keeps
- * their history), then by number; questions match by number (Q3 stays Q3 even
- * if its wording is refined).
+ * their agreement), then by number; questions match by number (Q3 stays Q3
+ * even if its wording is refined). Existing items left unmatched are removed.
  */
 export function planImport(existing: ExistingItem[], parsed: ParsedItem[]): ImportPlan {
   const pool = new Set(existing);
@@ -333,13 +332,13 @@ export function planImport(existing: ExistingItem[], parsed: ParsedItem[]): Impo
     let renumbered = false;
     if (match) {
       const same = bare(match.title) === bare(item.title) && match.body.trim() === item.body.trim();
-      change = !same ? "changed" : match.archived ? "restored" : "unchanged";
+      change = same ? "unchanged" : "changed";
       renumbered = same && norm(match.title) !== norm(item.title);
     }
     return { item, existing: match, change, renumbered };
   });
 
-  return { matches, removed: [...pool].filter((e) => !e.archived) };
+  return { matches, removed: [...pool] };
 }
 
 /** e.g. "3 new, 5 changed, 1 removed, 20 unchanged" */
@@ -349,7 +348,6 @@ export function summarizePlan(plan: ImportPlan) {
     [
       [count("new"), "new"],
       [count("changed"), "changed"],
-      [count("restored"), "restored"],
       [plan.removed.length, "removed"],
       [count("unchanged"), "unchanged"],
     ] as const

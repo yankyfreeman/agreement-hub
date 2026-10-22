@@ -32,7 +32,34 @@ async function init(): Promise<Db> {
   for (const statement of schema.SCHEMA_SQL) {
     await db.execute(sql.raw(statement));
   }
+  await pruneHistory(db);
   return db;
+}
+
+/**
+ * Keeps only the current and previous version of each item, with the messages
+ * written against them, and the last two imported files. Older history lives in
+ * the developer's project. Without a document id it prunes every document.
+ */
+export async function pruneHistory(db: Db, documentId?: number) {
+  const inDocument = (column: string) =>
+    documentId === undefined
+      ? sql``
+      : sql`AND ${sql.raw(column)} IN (SELECT id FROM sections WHERE document_id = ${documentId})`;
+  const latest = sql`(SELECT section_id, max(version) AS v FROM section_versions GROUP BY section_id)`;
+  await db.execute(sql`
+    DELETE FROM messages m USING ${latest} l
+    WHERE m.section_id = l.section_id AND m.version < l.v - 1 ${inDocument("m.section_id")}`);
+  await db.execute(sql`
+    DELETE FROM section_versions sv USING ${latest} l
+    WHERE sv.section_id = l.section_id AND sv.version < l.v - 1 ${inDocument("sv.section_id")}`);
+  await db.execute(sql`
+    DELETE FROM imports WHERE id IN (
+      SELECT id FROM (
+        SELECT id, row_number() OVER (PARTITION BY document_id ORDER BY created_at DESC, id DESC) AS n
+        FROM imports ${documentId === undefined ? sql`` : sql`WHERE document_id = ${documentId}`}
+      ) ranked WHERE n > 2
+    )`);
 }
 
 // Cached on globalThis so dev hot reloads reuse one connection (PGlite only

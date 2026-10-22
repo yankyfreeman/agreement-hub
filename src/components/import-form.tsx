@@ -16,7 +16,6 @@ import { SubmitButton } from "./ui";
 const CHANGE_STYLE: Record<Change, string> = {
   new: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
   changed: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
-  restored: "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300",
   unchanged: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
 };
 
@@ -160,7 +159,7 @@ export function ImportForm({
               {plan && plan.removed.length > 0 && (
                 <div className="text-sm">
                   <p className="font-medium">
-                    Not in this file (will be archived, history kept):
+                    Not in this file (will be deleted with its responses):
                   </p>
                   <ul className="list-inside list-disc text-zinc-600 dark:text-zinc-400">
                     {plan.removed.map((e) => (
@@ -172,7 +171,8 @@ export function ImportForm({
               {plan && (
                 <p className="text-xs text-zinc-500">
                   Changed items get a new version and need the client&apos;s response again.
-                  Unchanged items keep their agreement.
+                  Unchanged items keep their agreement. Only the current and previous versions
+                  are kept: download the conversation record first if you need older messages.
                 </p>
               )}
             </>
