@@ -123,12 +123,12 @@ export const SCHEMA_SQL = [
   `ALTER TABLE sections ADD COLUMN IF NOT EXISTS key text NOT NULL DEFAULT ''`,
   `ALTER TABLE sections ADD COLUMN IF NOT EXISTS group_label text`,
   `ALTER TABLE sections ADD COLUMN IF NOT EXISTS info_only boolean NOT NULL DEFAULT false`,
-  // Items removed by an import used to be archived; they are now deleted.
+  // Items removed by an import used to be archived; they are now deleted. The
+  // unused column stays so a still-running older deployment keeps working.
   `DO $$ BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.columns
                WHERE table_name = 'sections' AND column_name = 'archived_at') THEN
       DELETE FROM sections WHERE archived_at IS NOT NULL;
-      ALTER TABLE sections DROP COLUMN archived_at;
     END IF;
   END $$`,
   `CREATE TABLE IF NOT EXISTS section_versions (
