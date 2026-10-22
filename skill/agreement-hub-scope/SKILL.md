@@ -24,7 +24,7 @@ the project's copy up to date. Don't explain the format to them unless they ask.
    points and questions in it into numbered questions.
 2. **Write the document** in the format below. See `example.md` for a complete
    document.
-3. **Save it in the project** in the `agreement-hub/` folder (see "The project
+3. **Save it in the project** in the `docs/scope/` folder (see "The project
    folder") when you can write files. Otherwise put the whole document
    in a single Markdown code block so it can be copied in one go.
 4. **Publish it:** if the Agreement Hub connector is available (tools such as
@@ -123,11 +123,11 @@ Follow the save points below around every update.
 Agreement Hub keeps only the current and previous version of each section and
 question, with the messages about them; anything older, and anything an update
 removes, is deleted there. The developer's project keeps the full history, in
-an `agreement-hub/` folder at the project root. Every save adds a new snapshot
+a `docs/scope/` folder at the project root. Every save adds a new snapshot
 file; nothing in the folder is overwritten:
 
 ```
-agreement-hub/
+docs/scope/
   booking-app-scope-v1_2026-10-20_09-15.md
   booking-app-scope-v2_2026-10-21_16-40.md
   booking-app-record-v2_2026-10-22_14-28.md
@@ -145,10 +145,10 @@ agreement-hub/
   `Agreement Hub version … Saved …` line inside the file. `get_markdown` and
   `get_document` tell you the exact name to use for each snapshot.
 - `links.local.md`: the developer and client links. Secret: add
-  `agreement-hub/*.local.md` to the project's `.gitignore` and never commit it.
+  `docs/scope/*.local.md` to the project's `.gitignore` and never commit it.
 
 **The prefix** defaults to the project's name in lowercase with hyphens
-(`booking-app`). If snapshots already exist in `agreement-hub/`, use their
+(`booking-app`). If snapshots already exist in `docs/scope/`, use their
 prefix instead of the suggested one. The developer can change it at any time
 ("use `clinic` as the prefix"): rename every snapshot, replacing only the
 prefix (`git mv`, or a plain rename without git), so the version, date and
@@ -174,7 +174,7 @@ the optional save is skipped, as long as the save before each update happens.
 Without the connector, the developer page downloads the same files, with the
 same names, as **Document (.md)** and **Conversation record (.md)**, and
 **Apply update** downloads the record first; ask the developer to put them in
-`agreement-hub/`.
+`docs/scope/`.
 
 ## With the connector
 
@@ -185,11 +185,11 @@ needs to open the website:
   Markdown, the client's and developer's names, and the info-only sections in
   `info_only`. Show both links it returns. The **developer link** is private
   and is the only way to manage the document, so tell the developer to keep it
-  like a password, and save both links in `agreement-hub/links.local.md`. The
+  like a password, and save both links in `docs/scope/links.local.md`. The
   **client link** is what they send to the client. Then save a scope snapshot
   with `get_markdown` (now version 1) and commit.
 - **Later work needs the developer link.** Look for it in
-  `agreement-hub/links.local.md` or earlier in the conversation; otherwise ask
+  `docs/scope/links.local.md` or earlier in the conversation; otherwise ask
   for it. Never put it in the document, the record or replies to the client.
 - **"What did the client say?"** Call `get_open_items` and summarise: what they
   disagreed with or asked about, their answers, and what is still waiting.

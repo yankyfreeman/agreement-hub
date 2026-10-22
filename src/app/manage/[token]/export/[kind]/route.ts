@@ -11,7 +11,7 @@ export async function GET(_: Request, ctx: RouteContext<"/manage/[token]/export/
   const view = await loadDocument(token);
   if (!view || view.role !== "developer") return new Response("Not found", { status: 404 });
 
-  // Same names the skill uses in the project's agreement-hub/ folder.
+  // Same names the skill uses in the project's docs/scope/ folder.
   const savedAt = new Date();
   const [name, body] =
     kind === "document"

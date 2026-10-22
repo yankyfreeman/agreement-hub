@@ -196,7 +196,7 @@ function DeveloperPanel({ view, token }: { view: View; token: string }) {
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Agreement Hub keeps only the current and previous version of each section, with the
           messages about them. Keep both files in your project&apos;s{" "}
-          <code className="text-xs">agreement-hub/</code> folder and commit them before and after
+          <code className="text-xs">docs/scope/</code> folder and commit them before and after
           each update. Claude with the Agreement Hub skill does this for you.
         </p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">

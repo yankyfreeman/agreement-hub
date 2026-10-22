@@ -225,7 +225,7 @@ export function ImportForm({
           {saveFirst && (
             <p className="text-xs text-zinc-500">
               Downloads the conversation record first. Keep it in your project&apos;s
-              agreement-hub/ folder.
+              docs/scope/ folder.
             </p>
           )}
         </div>

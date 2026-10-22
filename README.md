@@ -91,7 +91,7 @@ that changes it. Exports write it under the title as
 `**Agreement Hub version:** 3 · **Saved:** 2026-10-22 14:30 UTC`; the importer
 ignores that line.
 
-In the developer's project the files live in `agreement-hub/` at the root, one
+In the developer's project the files live in `docs/scope/` at the root, one
 snapshot per save, named `<prefix>-scope-v3_2026-10-22_14-30.md` (the
 document) and `<prefix>-record-v3_2026-10-22_14-30.md` (the conversation
 record), both committed, plus a git-ignored `links.local.md`. The time is UTC
