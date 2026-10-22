@@ -193,11 +193,11 @@ export function toExistingItems(view: DocumentView): ExistingItem[] {
  * Markdown, with its version and the time under the title. Re-importing it
  * unchanged leaves every item unchanged.
  */
-export function documentMarkdown(view: DocumentView) {
+export function documentMarkdown(view: DocumentView, savedAt = new Date()) {
   return toMarkdown({
     title: view.document.title,
     intro: view.document.intro,
-    version: { number: view.document.version, savedAt: when(new Date()) },
+    version: { number: view.document.version, savedAt: when(savedAt) },
     items: view.sections.map((s) => ({
       kind: s.kind,
       key: s.key,
@@ -208,9 +208,18 @@ export function documentMarkdown(view: DocumentView) {
   });
 }
 
-/** Base name for the project's files, e.g. "booking-app" for "booking-app-scope.md". */
+/** The default prefix for the project's files, e.g. "booking-app". Developers can change it. */
 export function filePrefix(document: Document) {
   return slug(withoutNumber(document.title).replace(/:?\s*project scope$/i, "")) || "project";
+}
+
+/**
+ * A snapshot's file name in the project, e.g. "booking-app-scope-v3_2026-10-22_14-30.md".
+ * The time is UTC and matches the "Saved" time written inside the file.
+ */
+export function snapshotName(document: Document, kind: "scope" | "record", savedAt: Date) {
+  const [date, time] = savedAt.toISOString().slice(0, 16).split("T");
+  return `${filePrefix(document)}-${kind}-v${document.version}_${date}_${time.replace(":", "-")}.md`;
 }
 
 const nextVersion = sql`${documents.version} + 1`;

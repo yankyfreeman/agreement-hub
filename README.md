@@ -91,11 +91,13 @@ that changes it. Exports write it under the title as
 `**Agreement Hub version:** 3 · **Saved:** 2026-10-22 14:30 UTC`; the importer
 ignores that line.
 
-In the developer's project the files live in `agreement-hub/` at the root:
-`<prefix>-scope.md`, `<prefix>-record.md` (both committed) and
-`links.local.md` (git-ignored). The skill keeps them up to date and commits
-them before and after every update; the developer can change the prefix at
-any time.
+In the developer's project the files live in `agreement-hub/` at the root, one
+snapshot per save, named `<prefix>-scope-v3_2026-10-22_14-30.md` (the
+document) and `<prefix>-record-v3_2026-10-22_14-30.md` (the conversation
+record), both committed, plus a git-ignored `links.local.md`. The time is UTC
+and matches the line inside the file. The skill saves and commits snapshots
+before and after every update; the developer can change the prefix at any
+time, which renames the files but keeps their version and time.
 
 Status is always about the **current** version of an item, and every message
 shows who wrote it, when, and which version it was about.

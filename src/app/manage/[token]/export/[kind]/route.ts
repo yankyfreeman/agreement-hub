@@ -1,5 +1,5 @@
 import { connection } from "next/server";
-import { documentMarkdown, filePrefix, loadDocument } from "@/lib/data";
+import { documentMarkdown, loadDocument, snapshotName } from "@/lib/data";
 import { documentRecord } from "@/lib/record";
 
 // Downloads the current document, or its conversation record, as Markdown for
@@ -12,11 +12,11 @@ export async function GET(_: Request, ctx: RouteContext<"/manage/[token]/export/
   if (!view || view.role !== "developer") return new Response("Not found", { status: 404 });
 
   // Same names the skill uses in the project's agreement-hub/ folder.
-  const prefix = filePrefix(view.document);
+  const savedAt = new Date();
   const [name, body] =
     kind === "document"
-      ? [`${prefix}-scope.md`, documentMarkdown(view)]
-      : [`${prefix}-record.md`, documentRecord(view)];
+      ? [snapshotName(view.document, "scope", savedAt), documentMarkdown(view, savedAt)]
+      : [snapshotName(view.document, "record", savedAt), documentRecord(view, { savedAt })];
   return new Response(body, {
     headers: {
       "Content-Type": "text/markdown; charset=utf-8",
