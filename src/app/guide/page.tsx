@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Write your scope · Agreement Hub" }
 const AI_PROMPT = `Write the agreed project scope as a Markdown document that I will share with my client for review. Follow this format exactly, because a tool imports it automatically:
 
 - Start with one "# " heading: the document title.
-- Under the title, add short metadata lines (version, date, status) and nothing else.
+- Under the title, optionally add short lines such as who it is prepared for and by, and nothing else. Agreement Hub numbers the versions itself.
 - Use numbered "## " headings for the main sections, e.g. "## 4. Worker App".
 - If a section has parts the client should agree to separately, use numbered "### " subheadings, e.g. "### 4.1 Sign-in". Each "##" or "###" heading with text under it becomes one item the client agrees or disagrees with, so keep each one focused on a single topic.
 - Write plainly for a non-technical client. Bullet lists, numbered steps, tables, bold text and "> " notes are fine.

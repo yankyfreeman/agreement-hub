@@ -83,7 +83,19 @@ runs after every change and on each cold start):
 - The **last two** imported files.
 - On the developer page, **Document (.md)** and **Conversation record (.md)**
   download the current document and every item's status and messages
-  (`src/lib/record.ts`; no links, so it is safe to commit).
+  (`src/lib/record.ts`; no links, so it is safe to commit). **Apply update**
+  downloads the record before it changes anything.
+
+Each document has a version number: 1 when published, +1 for every update
+that changes it. Exports write it under the title as
+`**Agreement Hub version:** 3 · **Saved:** 2026-10-22 14:30 UTC`; the importer
+ignores that line.
+
+In the developer's project the files live in `agreement-hub/` at the root:
+`<prefix>-scope.md`, `<prefix>-record.md` (both committed) and
+`links.local.md` (git-ignored). The skill keeps them up to date and commits
+them before and after every update; the developer can change the prefix at
+any time.
 
 Status is always about the **current** version of an item, and every message
 shows who wrote it, when, and which version it was about.

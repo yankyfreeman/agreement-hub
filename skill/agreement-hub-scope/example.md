@@ -1,7 +1,5 @@
 # Bright Smile Dental Booking: Project Scope
 
-**Version:** 0.1 (draft for client review)
-**Date:** 21 October 2026
 **Prepared for:** Bright Smile Dental Clinic
 **Prepared by:** Studio North
 

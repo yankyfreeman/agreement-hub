@@ -124,7 +124,8 @@ export function DocumentView({ view, token }: { view: View; token: string }) {
                 Between <strong className="font-medium text-zinc-700 dark:text-zinc-300">{doc.clientName}</strong>{" "}
                 (client) and{" "}
                 <strong className="font-medium text-zinc-700 dark:text-zinc-300">{doc.developerName}</strong>{" "}
-                (developer) · last activity <LocalTime iso={doc.updatedAt.toISOString()} />
+                (developer) · version {doc.version} · last activity{" "}
+                <LocalTime iso={doc.updatedAt.toISOString()} />
               </p>
               <SummaryLine sections={sections} />
               {doc.intro && (
@@ -194,8 +195,9 @@ function DeveloperPanel({ view, token }: { view: View; token: string }) {
         <p className="text-sm font-medium">Keep a copy in your project</p>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Agreement Hub keeps only the current and previous version of each section, with the
-          messages about them. After each update, save both files in your project (and commit
-          them) so you keep the full history.
+          messages about them. Keep both files in your project&apos;s{" "}
+          <code className="text-xs">agreement-hub/</code> folder and commit them before and after
+          each update. Claude with the Agreement Hub skill does this for you.
         </p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
           <a href={`/manage/${token}/export/document`} className="underline" download>
@@ -215,6 +217,7 @@ function DeveloperPanel({ view, token }: { view: View; token: string }) {
           <ImportForm
             action={reimportAction.bind(null, token)}
             existing={toExistingItems(view)}
+            saveFirst={`/manage/${token}/export/record`}
             submitLabel="Apply update"
           />
         </div>

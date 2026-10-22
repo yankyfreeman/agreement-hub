@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useMemo, useState } from "react";
+import { startTransition, useActionState, useMemo, useState } from "react";
 import type { FormState } from "@/app/actions";
 import {
   parseMarkdown,
@@ -19,15 +19,28 @@ const CHANGE_STYLE: Record<Change, string> = {
   unchanged: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
 };
 
+/** Downloads a file in full, so it is saved before anything else happens. */
+async function download(href: string) {
+  const res = await fetch(href);
+  if (!res.ok) throw new Error(String(res.status));
+  const name = res.headers.get("content-disposition")?.match(/filename="([^"]+)"/)?.[1] ?? "record.md";
+  const url = URL.createObjectURL(await res.blob());
+  Object.assign(document.createElement("a"), { href: url, download: name }).click();
+  URL.revokeObjectURL(url);
+}
+
 export function ImportForm({
   action,
   existing,
+  saveFirst,
   children,
   submitLabel,
 }: {
   action: (state: FormState, form: FormData) => Promise<FormState>;
   /** Present when re-importing into an existing document. */
   existing?: ExistingItem[];
+  /** A file to download before submitting, e.g. the conversation record before an update. */
+  saveFirst?: string;
   /** Extra fields, e.g. client and developer names on create. */
   children?: React.ReactNode;
   submitLabel: string;
@@ -35,6 +48,25 @@ export function ImportForm({
   const [state, formAction] = useActionState(action, {});
   const [markdown, setMarkdown] = useState("");
   const [fileName, setFileName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    if (!saveFirst) return;
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    setSaving(true);
+    setSaveError(false);
+    try {
+      await download(saveFirst);
+    } catch {
+      setSaveError(true);
+      return;
+    } finally {
+      setSaving(false);
+    }
+    startTransition(() => formAction(data));
+  };
 
   const parsed = useMemo(() => (markdown.trim() ? parseMarkdown(markdown) : null), [markdown]);
   const plan = useMemo(
@@ -46,7 +78,7 @@ export function ImportForm({
   const questionCount = parsed?.items.filter((i) => i.kind === "question").length ?? 0;
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} onSubmit={onSubmit} className="space-y-4">
       <input type="hidden" name="markdown" value={markdown} />
       <input type="hidden" name="fileName" value={fileName} />
 
@@ -181,8 +213,23 @@ export function ImportForm({
       )}
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {saveError && (
+        <p className="text-sm text-red-600">
+          Couldn&apos;t download the conversation record, so nothing was changed. Please try again.
+        </p>
+      )}
 
-      {parsed && parsed.items.length > 0 && <SubmitButton>{submitLabel}</SubmitButton>}
+      {parsed && parsed.items.length > 0 && (
+        <div className="space-y-1">
+          <SubmitButton>{saving ? "Saving the record…" : submitLabel}</SubmitButton>
+          {saveFirst && (
+            <p className="text-xs text-zinc-500">
+              Downloads the conversation record first. Keep it in your project&apos;s
+              agreement-hub/ folder.
+            </p>
+          )}
+        </div>
+      )}
     </form>
   );
 }

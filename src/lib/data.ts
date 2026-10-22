@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { and, asc, desc, eq, inArray, or } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import {
   documents,
   getDb,
@@ -15,11 +15,14 @@ import {
 import {
   parseMarkdown,
   planImport,
+  slug,
   summarizePlan,
   toMarkdown,
+  withoutNumber,
   type ExistingItem,
   type ParsedDocument,
 } from "./markdown-import";
+import { when } from "./record";
 
 export type Status =
   // sections
@@ -187,12 +190,14 @@ export function toExistingItems(view: DocumentView): ExistingItem[] {
 
 /**
  * The document as it stands now (including edits made on the website) as
- * Markdown. Re-importing it unchanged leaves every item unchanged.
+ * Markdown, with its version and the time under the title. Re-importing it
+ * unchanged leaves every item unchanged.
  */
 export function documentMarkdown(view: DocumentView) {
   return toMarkdown({
     title: view.document.title,
     intro: view.document.intro,
+    version: { number: view.document.version, savedAt: when(new Date()) },
     items: view.sections.map((s) => ({
       kind: s.kind,
       key: s.key,
@@ -203,15 +208,23 @@ export function documentMarkdown(view: DocumentView) {
   });
 }
 
+/** Base name for the project's files, e.g. "booking-app" for "booking-app-scope.md". */
+export function filePrefix(document: Document) {
+  return slug(withoutNumber(document.title).replace(/:?\s*project scope$/i, "")) || "project";
+}
+
+const nextVersion = sql`${documents.version} + 1`;
+
 export async function updateDocument(
-  documentId: number,
+  document: Document,
   input: { title: string; intro: string; clientName: string; developerName: string },
 ) {
+  const changed = input.title !== document.title || input.intro !== document.intro;
   const db = await getDb();
   await db
     .update(documents)
-    .set({ ...input, updatedAt: new Date() })
-    .where(eq(documents.id, documentId));
+    .set({ ...input, ...(changed && { version: nextVersion }), updatedAt: new Date() })
+    .where(eq(documents.id, document.id));
 }
 
 // ---------------------------------------------------------------------------
@@ -246,15 +259,25 @@ export async function createFromMarkdown(
   return doc.adminToken;
 }
 
+/** Imports a new version of the document; returns its version number. */
 export async function reimportMarkdown(document: Document, existing: ExistingItem[], input: ImportInput) {
   const parsed = parseMarkdown(input.markdown);
   if (!parsed.items.length) throw new Error("No sections or questions found in the file.");
+  const title = parsed.title || document.title;
+  const plan = planImport(existing, parsed.items);
+  const changed =
+    title !== document.title ||
+    parsed.intro !== document.intro ||
+    plan.removed.length > 0 ||
+    plan.matches.some((m) => m.change !== "unchanged" || m.renumbered);
   const db = await getDb();
-  await db
+  const [row] = await db
     .update(documents)
-    .set({ title: parsed.title || document.title, intro: parsed.intro })
-    .where(eq(documents.id, document.id));
+    .set({ title, intro: parsed.intro, ...(changed && { version: nextVersion }) })
+    .where(eq(documents.id, document.id))
+    .returning({ version: documents.version });
   await applyImport(document.id, parsed, existing, input);
+  return row.version;
 }
 
 async function applyImport(
@@ -410,6 +433,7 @@ export async function reviseSection(
     title,
     body,
   });
+  await db.update(documents).set({ version: nextVersion }).where(eq(documents.id, documentId));
   await pruneHistory(db, documentId);
   await touch(documentId);
 }

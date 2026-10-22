@@ -29,6 +29,8 @@ export type ParsedDocument = {
 };
 
 const QUESTION_LABEL = /^Q(\d+)\.?$/i;
+// "**Agreement Hub version:** 3 · **Saved:** 2026-10-22 14:30 UTC", written by exports.
+const VERSION_LINE = /^Agreement Hub version:/;
 // "4.1 Platform", "6. Admin Panel", "10) Next steps"
 const NUMBERED_HEADING = /^(\d+(?:\.\d+)*)[.)]?\s+/;
 
@@ -152,7 +154,8 @@ export function parseMarkdown(source: string): ParsedDocument {
     }
 
     if (!current) {
-      introBlocks.push(raw(node));
+      // The version line exports add is information for the file, not content.
+      if (!(node.type === "paragraph" && VERSION_LINE.test(toString(node)))) introBlocks.push(raw(node));
       continue;
     }
 
@@ -211,8 +214,17 @@ function firstPara(li: ListItem): Paragraph | undefined {
  * can be edited and re-imported with every item matching (and unchanged items
  * keeping their agreement). Info-only flags are not part of the Markdown.
  */
-export function toMarkdown(doc: Omit<ParsedDocument, "items"> & { items: Omit<ParsedItem, "infoOnly">[] }) {
+export function toMarkdown(
+  doc: Omit<ParsedDocument, "items"> & {
+    items: Omit<ParsedItem, "infoOnly">[];
+    /** Written under the title; ignored when the file is imported again. */
+    version?: { number: number; savedAt: string };
+  },
+) {
   const out: string[] = [`# ${doc.title}`];
+  if (doc.version) {
+    out.push(`**Agreement Hub version:** ${doc.version.number} · **Saved:** ${doc.version.savedAt}`);
+  }
   if (doc.intro) out.push(doc.intro);
 
   // The last "##" heading written, the heading the parser is currently

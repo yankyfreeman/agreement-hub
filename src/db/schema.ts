@@ -18,6 +18,9 @@ export const documents = pgTable("documents", {
   shareToken: text("share_token").notNull().unique(),
   // Link the developer keeps to manage the document. Never shown to the client.
   adminToken: text("admin_token").notNull().unique(),
+  // 1 when published, +1 for every update that changes the document. Exports
+  // write it into the file so the developer's project can track it.
+  version: integer("version").notNull().default(1),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -113,6 +116,7 @@ export const SCHEMA_SQL = [
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
   )`,
+  `ALTER TABLE documents ADD COLUMN IF NOT EXISTS version integer NOT NULL DEFAULT 1`,
   `CREATE TABLE IF NOT EXISTS sections (
     id serial PRIMARY KEY,
     document_id integer NOT NULL REFERENCES documents(id) ON DELETE CASCADE,

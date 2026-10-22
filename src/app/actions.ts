@@ -84,7 +84,7 @@ export async function updateDocumentAction(token: string, form: FormData) {
   const doc = await requireDeveloper(token);
   const title = field(form, "title", 200);
   if (!title) return;
-  await updateDocument(doc.id, {
+  await updateDocument(doc, {
     title,
     intro: field(form, "intro", 10_000),
     clientName: field(form, "clientName", 100) || "Client",

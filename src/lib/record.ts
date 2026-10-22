@@ -77,7 +77,8 @@ export function documentRecord(view: DocumentView, { includeText = true } = {}) 
   const { document: doc, sections } = view;
   return [
     `# ${doc.title}: conversation record`,
-    `Client: ${doc.clientName} · Developer: ${doc.developerName} · Saved: ${when(new Date())}`,
+    `**Agreement Hub version:** ${doc.version} · **Saved:** ${when(new Date())}`,
+    `Client: ${doc.clientName} · Developer: ${doc.developerName}`,
     `Status: ${statusSummary(sections) || "nothing to review yet"}`,
     "Agreement Hub keeps only the current and previous version of each item, with the messages about them. Keep this file in the project next to the scope document, and save it again after each update.",
     includeText && doc.intro ? doc.intro : "",
