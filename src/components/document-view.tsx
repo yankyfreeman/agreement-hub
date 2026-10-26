@@ -4,6 +4,7 @@ import { toExistingItems, type DocumentView as View, type SectionView } from "@/
 import { ImportForm } from "./import-form";
 import { Markdown } from "./markdown";
 import { Outline, type OutlineEntry } from "./outline";
+import { ProgressView } from "./progress-view";
 import { QuestionsBlock } from "./questions-block";
 import { SectionBlock } from "./section-card";
 import { SummaryLine } from "./status";
@@ -87,14 +88,19 @@ function toOutline(blocks: Block[]): OutlineEntry[] {
 
 const questionsId = (questions: SectionView[]) => `questions-${questions[0].id}`;
 
-export function DocumentView({ view, token }: { view: View; token: string }) {
+export type Tab = "scope" | "progress";
+
+export function DocumentView({ view, token, tab }: { view: View; token: string; tab: Tab }) {
   const { document: doc, role, sections } = view;
   const isDeveloper = role === "developer";
   const questionKeys = new Set(sections.filter((s) => s.kind === "question").map((s) => s.key));
   const props = { role, token, questionKeys };
   const blocks = toBlocks(sections);
   const outline = toOutline(blocks);
-  const showOutline = outline.length > 2;
+  // Clients see the Progress tab once there is something to show.
+  const showTabs = isDeveloper || view.checks.length > 0;
+  const onProgress = showTabs && tab === "progress";
+  const showOutline = !onProgress && outline.length > 2;
 
   return (
     <div className="flex-1 bg-zinc-100 print:bg-white dark:bg-zinc-900/60">
@@ -112,68 +118,106 @@ export function DocumentView({ view, token }: { view: View; token: string }) {
             <PrintButton />
           </nav>
 
-          {isDeveloper && <DeveloperPanel view={view} token={token} />}
+          {isDeveloper && !onProgress && <DeveloperPanel view={view} token={token} />}
+
+          {showTabs && <Tabs view={view} token={token} tab={onProgress ? "progress" : "scope"} />}
 
           {showOutline && <Outline entries={outline} variant="inline" />}
 
-          {/* The document itself, laid out like a printed page */}
-          <article className="doc rounded-sm bg-white px-5 py-10 shadow-sm ring-1 ring-zinc-200 sm:px-16 sm:py-14 print:px-0 print:py-0 print:shadow-none print:ring-0 dark:bg-zinc-950 dark:ring-zinc-800">
-            <header className="mb-8 space-y-3 border-b border-zinc-200 pb-6 dark:border-zinc-800">
-              <h1 className="text-3xl font-bold leading-tight tracking-tight">{doc.title}</h1>
-              <p className="font-sans text-sm text-zinc-500">
-                Between <strong className="font-medium text-zinc-700 dark:text-zinc-300">{doc.clientName}</strong>{" "}
-                (client) and{" "}
-                <strong className="font-medium text-zinc-700 dark:text-zinc-300">{doc.developerName}</strong>{" "}
-                (developer) · version {doc.version} · last activity{" "}
-                <LocalTime iso={doc.updatedAt.toISOString()} />
-              </p>
-              <SummaryLine sections={sections} />
-              {doc.intro && (
-                <div className="text-zinc-700 dark:text-zinc-300">
-                  <Markdown text={doc.intro} />
-                </div>
-              )}
-              {sections.length > 0 && (
-                <p className="font-sans text-xs text-zinc-500 print:hidden">
-                  {isDeveloper
-                    ? "Hover over a section to reply or edit it, or over a question to reply."
-                    : "Hover over a section (or tap the icons beside it) to agree, disagree or comment. Questions have a box for your answer."}
+          {onProgress ? (
+            <ProgressView view={view} />
+          ) : (
+            /* The document itself, laid out like a printed page */
+            <article className="doc rounded-sm bg-white px-5 py-10 shadow-sm ring-1 ring-zinc-200 sm:px-16 sm:py-14 print:px-0 print:py-0 print:shadow-none print:ring-0 dark:bg-zinc-950 dark:ring-zinc-800">
+              <header className="mb-8 space-y-3 border-b border-zinc-200 pb-6 dark:border-zinc-800">
+                <h1 className="text-3xl font-bold leading-tight tracking-tight">{doc.title}</h1>
+                <p className="font-sans text-sm text-zinc-500">
+                  Between <strong className="font-medium text-zinc-700 dark:text-zinc-300">{doc.clientName}</strong>{" "}
+                  (client) and{" "}
+                  <strong className="font-medium text-zinc-700 dark:text-zinc-300">{doc.developerName}</strong>{" "}
+                  (developer) · version {doc.version} · last activity{" "}
+                  <LocalTime iso={doc.updatedAt.toISOString()} />
                 </p>
-              )}
-            </header>
+                <SummaryLine sections={sections} />
+                {doc.intro && (
+                  <div className="text-zinc-700 dark:text-zinc-300">
+                    <Markdown text={doc.intro} />
+                  </div>
+                )}
+                {sections.length > 0 && (
+                  <p className="font-sans text-xs text-zinc-500 print:hidden">
+                    {isDeveloper
+                      ? "Hover over a section to reply or edit it, or over a question to reply."
+                      : "Hover over a section (or tap the icons beside it) to agree, disagree or comment. Questions have a box for your answer."}
+                  </p>
+                )}
+              </header>
 
-            <div className="space-y-2">
-              {blocks.map((block) =>
-                block.type === "questions" ? (
-                  <div
-                    key={`q-${block.questions[0].id}`}
-                    id={questionsId(block.questions)}
-                    className="scroll-mt-6"
-                  >
-                    <QuestionsBlock questions={block.questions} {...props} />
-                  </div>
-                ) : (
-                  <div key={block.section.id}>
-                    {block.heading && (
-                      <h2
-                        id={`group-${block.section.id}`}
-                        className="mb-1 mt-8 scroll-mt-6 text-2xl font-bold tracking-tight"
-                      >
-                        {block.heading}
-                      </h2>
-                    )}
-                    <SectionBlock section={block.section} {...props} />
-                  </div>
-                ),
-              )}
-              {sections.length === 0 && (
-                <p className="py-8 text-center font-sans text-sm text-zinc-500">Nothing to review yet.</p>
-              )}
-            </div>
-          </article>
+              <div className="space-y-2">
+                {blocks.map((block) =>
+                  block.type === "questions" ? (
+                    <div
+                      key={`q-${block.questions[0].id}`}
+                      id={questionsId(block.questions)}
+                      className="scroll-mt-6"
+                    >
+                      <QuestionsBlock questions={block.questions} {...props} />
+                    </div>
+                  ) : (
+                    <div key={block.section.id}>
+                      {block.heading && (
+                        <h2
+                          id={`group-${block.section.id}`}
+                          className="mb-1 mt-8 scroll-mt-6 text-2xl font-bold tracking-tight"
+                        >
+                          {block.heading}
+                        </h2>
+                      )}
+                      <SectionBlock section={block.section} {...props} />
+                    </div>
+                  ),
+                )}
+                {sections.length === 0 && (
+                  <p className="py-8 text-center font-sans text-sm text-zinc-500">Nothing to review yet.</p>
+                )}
+              </div>
+            </article>
+          )}
         </main>
       </div>
     </div>
+  );
+}
+
+/** Switches between the agreed scope and the build progress. */
+function Tabs({ view, token, tab }: { view: View; token: string; tab: Tab }) {
+  const base = `/${view.role === "developer" ? "manage" : "d"}/${token}`;
+  const verified = view.checks.filter((c) => c.status === "passing").length;
+  const tabs: [Tab, string, string][] = [
+    ["scope", "Scope", base],
+    [
+      "progress",
+      view.checks.length ? `Progress · ${verified}/${view.checks.length}` : "Progress",
+      `${base}?view=progress`,
+    ],
+  ];
+  return (
+    <nav aria-label="Views" className="flex gap-1 border-b border-zinc-200 print:hidden dark:border-zinc-800">
+      {tabs.map(([key, label, href]) => (
+        <Link
+          key={key}
+          href={href}
+          aria-current={tab === key ? "page" : undefined}
+          className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
+            tab === key
+              ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
+              : "border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+          }`}
+        >
+          {label}
+        </Link>
+      ))}
+    </nav>
   );
 }
 

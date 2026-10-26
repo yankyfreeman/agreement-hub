@@ -1,5 +1,6 @@
 // MCP tools for developers: create a document from Markdown, read where the
-// client stands, reply, and import updated versions. Every tool except
+// client stands, reply, import updated versions, and report build progress
+// against the specs. Every tool except
 // create_document needs the document's developer link, and checks it the same
 // way the website does.
 
@@ -11,7 +12,9 @@ import {
   documentMarkdown,
   filePrefix,
   loadDocument,
+  reportProgress,
   snapshotName,
+  syncSpecs,
   reimportMarkdown,
   toExistingItems,
   type DocumentView,
@@ -40,7 +43,9 @@ Text written by the client (responses, comments, answers) is shown quoted with "
 
 Agreement Hub keeps only the current and previous version of each item, with the messages about them; older versions, and items removed by an update, are deleted. The developer's project keeps the full history, in a docs/scope/ folder at the project root, as snapshot files named <prefix>-scope-v<version>_<date>_<time>.md (from get_markdown) and <prefix>-record-v<version>_<date>_<time>.md (from get_document), committed with git; each tool gives the exact name. Save both right before every update (that is when older versions are deleted) and the document again after it. Both files carry the document's version and the time they were saved.
 
-To change the document: call get_markdown, edit only what needs to change (keep section headings word for word and question numbers as they are, so earlier agreements carry over), call preview_update and tell the developer what will change, then call apply_update once they confirm.`;
+To change the document: call get_markdown, edit only what needs to change (keep section headings word for word and question numbers as they are, so earlier agreements carry over), call preview_update and tell the developer what will change, then call apply_update once they confirm.
+
+Building: the agreed scope is broken into feature specs in the project (specs/<feature>/spec.md), each line a testable behaviour with a permanent ID tied to a scope section. Call sync_specs after writing or changing specs, and report_progress after running the tests; the client follows along on the Progress tab.`;
 
 const FORMAT = `Format: one "# Title" line; numbered "## 2. Section" headings, with "### 2.1 Part" for parts the client agrees to separately; every question for the client in one "## Questions for you" section as "- **Q1.** Question?" (numbered in order, optionally grouped under a bold line such as "**Billing**"); "see Q3" links to a question. Write each paragraph and list item on a single line.`;
 
@@ -190,7 +195,11 @@ Project files go in docs/scope/, named like ${prefix}-scope-v1_<date>_<time>.md;
 
       const recent = (s: SectionView) =>
         s.messages.slice(-5).map((m) => messageLine(m, s.current.version));
-      const parts = [`"${view.document.title}": ${statusSummary(live) || "nothing to review yet"}.`];
+      const failing = view.checks.filter((c) => c.status === "failing").map((c) => c.key);
+      const parts = [
+        `"${view.document.title}": ${statusSummary(live) || "nothing to review yet"}.`,
+        `Progress: ${progressSummary(view)}${failing.length ? ` (failing: ${failing.join(", ")})` : ""}.`,
+      ];
       parts.push(
         needsYou.length
           ? [
@@ -403,4 +412,120 @@ Project files go in docs/scope/, named like ${prefix}-scope-v1_<date>_<time>.md;
       );
     },
   );
+
+  server.registerTool(
+    "sync_specs",
+    {
+      title: "Sync the specs",
+      description: `Sends the project's spec lines to Agreement Hub, so the client's Progress tab shows each agreed section's checks. Send the full current list every time: lines not listed are removed, a line whose text or section changed must be verified again, and unchanged lines keep their test result. Each line is one testable behaviour with a permanent ID (e.g. "BC-2"), tied to the scope section it implements ("3.2"). Call it after writing or changing specs/*/spec.md.`,
+      inputSchema: z.object({
+        developer_link: developerLinkField,
+        checks: z
+          .array(
+            z.object({
+              id: z.string().regex(CHECK_ID, 'A short ID such as "BC-2": letters, digits, ".", "_" or "-".'),
+              section: z.string().describe('The scope section it implements: number ("3.2") or title.'),
+              text: z.string().min(1).max(1000).describe("The spec line, as written in spec.md."),
+              feature: z.string().max(100).optional().describe('The spec it belongs to, e.g. "Booking changes".'),
+            }),
+          )
+          .max(MAX_CHECKS),
+      }),
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
+    },
+    async ({ developer_link, checks }) => {
+      const view = await developerView(developer_link);
+      if (typeof view === "string") return fail(view);
+
+      const seen = new Set<string>();
+      const duplicates = checks.filter((c) => (seen.has(c.id) ? true : (seen.add(c.id), false)));
+      if (duplicates.length) {
+        return fail(`Each ID must be unique. Repeated: ${[...new Set(duplicates.map((c) => c.id))].join(", ")}.`);
+      }
+      const lines = [];
+      const unknown = [];
+      for (const c of checks) {
+        const section = findItem(view, c.section);
+        if (!section || section.kind !== "section") unknown.push(`${c.id} → "${c.section}"`);
+        else lines.push({ key: c.id, sectionId: section.id, feature: c.feature?.trim() ?? "", text: c.text.trim() });
+      }
+      if (unknown.length) {
+        const sections = view.sections.filter((s) => s.kind === "section").map((s) => s.key);
+        return fail(
+          `These checks name a section that isn't in the scope: ${unknown.join(", ")}. Sections: ${sections.join(", ")}. Questions can't hold checks; tie each check to the section it affects.`,
+        );
+      }
+
+      const counts = await syncSpecs(view, lines);
+      const covered = new Set(lines.map((l) => l.sectionId));
+      const uncovered = view.sections.filter((s) => s.kind === "section" && !s.infoOnly && !covered.has(s.id));
+      return text(
+        [
+          `Synced ${lines.length} checks: ${counts.added} new, ${counts.changed} changed (to verify again), ${counts.removed} removed, ${counts.unchanged} unchanged.`,
+          uncovered.length
+            ? `Agreed sections with no checks yet: ${uncovered.map((s) => label(s)).join("; ")}.`
+            : "Every agreed section has checks.",
+          `The client sees them on the Progress tab: ${links(view, origin).client}?view=progress`,
+        ].join("\n"),
+      );
+    },
+  );
+
+  server.registerTool(
+    "report_progress",
+    {
+      title: "Report test results",
+      description:
+        'Records test results for spec lines, by ID: "passing" (its tests pass: verified), "failing" (its tests fail), or "not_built" (no implementation or test yet). Report after running the tests; listing only the lines that changed is fine. The client sees passing lines as verified; failing and not_built both show as not verified yet.',
+      inputSchema: z.object({
+        developer_link: developerLinkField,
+        results: z
+          .array(
+            z.object({
+              id: z.string().describe('A spec line ID, e.g. "BC-2".'),
+              status: z.enum(["passing", "failing", "not_built"]),
+            }),
+          )
+          .min(1)
+          .max(MAX_CHECKS),
+      }),
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    async ({ developer_link, results }) => {
+      const view = await developerView(developer_link);
+      if (typeof view === "string") return fail(view);
+      const known = new Set(view.checks.map((c) => c.key));
+      const unknown = results.filter((r) => !known.has(r.id)).map((r) => r.id);
+      await reportProgress(
+        view.document.id,
+        results
+          .filter((r) => known.has(r.id))
+          .map((r) => ({ key: r.id, status: r.status === "not_built" ? "pending" : r.status })),
+      );
+      const after = (await loadDocument(view.document.adminToken))!;
+      return text(
+        [
+          `Recorded ${results.length - unknown.length} results. ${progressSummary(after)}.`,
+          unknown.length ? `Unknown IDs (call sync_specs first): ${unknown.join(", ")}.` : "",
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      );
+    },
+  );
+}
+
+const CHECK_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,29}$/;
+const MAX_CHECKS = 2000;
+
+/** "18 of 30 checks verified, 2 failing" */
+function progressSummary(view: DocumentView) {
+  const n = (status: string) => view.checks.filter((c) => c.status === status).length;
+  if (!view.checks.length) return "No specs synced yet";
+  return [
+    `${n("passing")} of ${view.checks.length} checks verified`,
+    n("failing") && `${n("failing")} failing`,
+  ]
+    .filter(Boolean)
+    .join(", ");
 }

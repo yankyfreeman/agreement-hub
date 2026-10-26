@@ -41,6 +41,19 @@ under Customize → Connectors, or in Claude Code with
 | `reply` | Replies on a section or question, or asks for more detail on a question |
 | `get_markdown` | The current document as Markdown, ready to edit |
 | `preview_update` / `apply_update` | Shows what an updated version would change, then imports it |
+| `sync_specs` | Sends the project's spec lines (ID, scope section, text) for the Progress tab |
+| `report_progress` | Records test results per spec line: passing, failing or not built |
+
+### Specs and the Progress tab
+
+Once the scope is agreed, the skill breaks it into feature specs in the
+developer's project (`specs/<feature>/spec.md`, one testable line per
+behaviour, each with a permanent ID such as `BC-2` and the scope section it
+implements), then plans and tasks. `sync_specs` sends the lines to Agreement
+Hub (`spec_checks` table, current status only) and `report_progress` sends
+test results. Both links get **Scope** and **Progress** tabs (`?view=progress`;
+clients see Progress once there are checks): each agreed section with its
+checks, verified when their tests pass.
 
 There are no accounts: every tool except `create_document` takes the document's
 developer link, exactly like the website. Rate limits (`src/lib/rate-limit.ts`)
@@ -156,7 +169,9 @@ src/
   lib/mcp.ts              MCP tools
   lib/rate-limit.ts       rate limits for imports and MCP
   lib/record.ts           the conversation record export
+  components/progress-view.tsx   the Progress tab
 docs/project-notes.md     every decision so far and why
+docs/spec-drift-and-changes.md   checklist for spec drift and client change requests
 skill/                    Claude skill that writes scope documents in this format
 public/agreement-hub-scope.zip   the skill, as served for download
 ```

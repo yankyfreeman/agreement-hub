@@ -8,6 +8,8 @@ import {
   messages,
   sections,
   sectionVersions,
+  specChecks,
+  type CheckStatus,
   type ItemKind,
   type MessageKind,
   type Role,
@@ -40,6 +42,7 @@ export type Message = typeof messages.$inferSelect;
 export type SectionVersion = typeof sectionVersions.$inferSelect;
 export type Document = typeof documents.$inferSelect;
 export type ImportRecord = Omit<typeof imports.$inferSelect, "markdown">;
+export type SpecCheck = typeof specChecks.$inferSelect;
 
 export type SectionView = {
   id: number;
@@ -60,6 +63,8 @@ export type DocumentView = {
   role: Role;
   sections: SectionView[];
   imports: ImportRecord[];
+  /** Spec lines synced from the developer's project, in spec order. */
+  checks: SpecCheck[];
 };
 
 function newToken() {
@@ -116,7 +121,7 @@ export async function loadDocument(token: string): Promise<DocumentView | null> 
   if (!found) return null;
   const db = await getDb();
 
-  const [secs, importRows] = await Promise.all([
+  const [secs, importRows, checks] = await Promise.all([
     db
       .select()
       .from(sections)
@@ -135,6 +140,11 @@ export async function loadDocument(token: string): Promise<DocumentView | null> 
           .where(eq(imports.documentId, found.document.id))
           .orderBy(desc(imports.createdAt))
       : Promise.resolve([]),
+    db
+      .select()
+      .from(specChecks)
+      .where(eq(specChecks.documentId, found.document.id))
+      .orderBy(asc(specChecks.position)),
   ]);
   const ids = secs.map((s) => s.id);
 
@@ -174,7 +184,7 @@ export async function loadDocument(token: string): Promise<DocumentView | null> 
     ];
   });
 
-  return { ...found, sections: views, imports: importRows };
+  return { ...found, sections: views, imports: importRows, checks };
 }
 
 export function toExistingItems(view: DocumentView): ExistingItem[] {
@@ -487,6 +497,75 @@ export async function addMessage(
     body,
   });
   await touch(document.id);
+}
+
+// ---------------------------------------------------------------------------
+// Specs and progress
+
+export type SpecLine = { key: string; sectionId: number; feature: string; text: string };
+
+/**
+ * Replaces the document's spec lines with the developer's current list. A line
+ * keeps its test result unless its text or section changed (then it needs
+ * verifying again); lines no longer listed are removed.
+ */
+export async function syncSpecs(view: DocumentView, lines: SpecLine[]) {
+  const db = await getDb();
+  const documentId = view.document.id;
+  const versionOf = new Map(view.sections.map((s) => [s.id, s.current.version]));
+  const existing = new Map(view.checks.map((c) => [c.key, c]));
+  const listed = new Set(lines.map((l) => l.key));
+  const counts = { added: 0, changed: 0, unchanged: 0, removed: 0 };
+
+  const removed = view.checks.filter((c) => !listed.has(c.key));
+  if (removed.length) {
+    await db.delete(specChecks).where(inArray(specChecks.id, removed.map((c) => c.id)));
+  }
+  counts.removed = removed.length;
+
+  const added = [];
+  for (const [i, line] of lines.entries()) {
+    const fields = { sectionId: line.sectionId, feature: line.feature, text: line.text, position: i + 1 };
+    const scopeVersion = versionOf.get(line.sectionId)!;
+    const old = existing.get(line.key);
+    if (!old) {
+      added.push({ documentId, key: line.key, scopeVersion, ...fields });
+    } else if (old.text !== line.text || old.sectionId !== line.sectionId) {
+      await db
+        .update(specChecks)
+        .set({ ...fields, scopeVersion, status: "pending", checkedAt: null })
+        .where(eq(specChecks.id, old.id));
+      counts.changed++;
+    } else {
+      if (old.position !== fields.position || old.feature !== fields.feature) {
+        await db
+          .update(specChecks)
+          .set({ position: fields.position, feature: fields.feature })
+          .where(eq(specChecks.id, old.id));
+      }
+      counts.unchanged++;
+    }
+  }
+  if (added.length) await db.insert(specChecks).values(added);
+  counts.added = added.length;
+  return counts;
+}
+
+/** Records test results for spec lines, by key. */
+export async function reportProgress(
+  documentId: number,
+  results: { key: string; status: CheckStatus }[],
+) {
+  const db = await getDb();
+  const checkedAt = new Date();
+  for (const status of ["pending", "passing", "failing"] as const) {
+    const keys = results.filter((r) => r.status === status).map((r) => r.key);
+    if (!keys.length) continue;
+    await db
+      .update(specChecks)
+      .set({ status, checkedAt })
+      .where(and(eq(specChecks.documentId, documentId), inArray(specChecks.key, keys)));
+  }
 }
 
 async function touch(documentId: number) {

@@ -1,6 +1,6 @@
 # Agreement Hub: project notes
 
-Everything decided and built so far, and why. Last updated 22 October 2026.
+Everything decided and built so far, and why. Last updated 26 October 2026.
 
 Live site: https://agreement-hub.vercel.app
 Repository: https://github.com/yankyfreeman/agreement-hub (deploys to Vercel on every push to `main`)
@@ -18,13 +18,14 @@ Repository: https://github.com/yankyfreeman/agreement-hub (deploys to Vercel on 
 9. [What the portal stores, and for how long](#9-what-the-portal-stores-and-for-how-long)
 10. [Document versions](#10-document-versions)
 11. [History in the developer's project: `docs/scope/`](#11-history-in-the-developers-project-docsscope)
-12. [The website](#12-the-website)
-13. [Data model](#13-data-model)
-14. [Code map](#14-code-map)
-15. [Ideas considered and not taken](#15-ideas-considered-and-not-taken)
-16. [Timeline](#16-timeline)
-17. [Setup notes](#17-setup-notes)
-18. [Open items and possible next steps](#18-open-items-and-possible-next-steps)
+12. [The build: specs, tasks and progress](#12-the-build-specs-tasks-and-progress)
+13. [The website](#13-the-website)
+14. [Data model](#14-data-model)
+15. [Code map](#15-code-map)
+16. [Ideas considered and not taken](#16-ideas-considered-and-not-taken)
+17. [Timeline](#17-timeline)
+18. [Setup notes](#18-setup-notes)
+19. [Open items and possible next steps](#19-open-items-and-possible-next-steps)
 
 ---
 
@@ -126,6 +127,9 @@ What it does:
 - With the connector: publishes, checks responses, replies, and applies updates
   with a preview first.
 - Keeps the history in the project's `docs/scope/` folder (section 11).
+- Turns the agreed scope into feature specs, plans and tasks, and reports
+  test results to the Progress tab (section 12; details in `specs.md` inside
+  the skill).
 
 Installing:
 
@@ -166,6 +170,8 @@ Connect:
 | `get_markdown` | The current document as Markdown, with the exact snapshot file name |
 | `preview_update` | What an updated file would change (changed, new, removed, renumbered), without changing anything |
 | `apply_update` | Imports the update; returns the new version number |
+| `sync_specs` | Sends the project's spec lines for the Progress tab (section 12) |
+| `report_progress` | Records test results per spec line (section 12) |
 
 Design choices:
 
@@ -309,7 +315,62 @@ The portal can't verify that the developer saved a copy. The skill always saves
 first; on the website, **Apply update** downloads the conversation record before
 it sends the update (verified in the network log).
 
-## 12. The website
+## 12. The build: specs, tasks and progress
+
+The bigger picture: agree the scope with the client, have AI turn it into
+feature specs and tasks and build them, and show the client progress against
+what they agreed. The developer handles real-world cases, performance and edge
+cases, and steps in where the AI misses something.
+
+**What lives where:**
+
+```
+AGREEMENT HUB (portal)                  DEVELOPER'S REPO
+Client link                             docs/scope/        scope snapshots
+ ├─ Scope tab      what was agreed      specs/<feature>/   spec.md, plan.md, tasks.md
+ └─ Progress tab   what is verified     tests              one or more per spec ID
+MCP: sync_specs, report_progress        Claude Code + the skill do the work
+```
+
+**The layers:** scope (what the client agreed) → **spec** (what the system
+must do, one testable line each) → plan (how) → tasks (steps, disposable) →
+tests (proof). Anything the client could notice is spec; anything they
+couldn't is plan. The skill uses GitHub Spec Kit's commands for plans and tasks
+when the project has it.
+
+**Spec lines** have a permanent ID and name the scope section they implement:
+
+```markdown
+- **BC-2** Changes are allowed until 24 hours before the appointment. (3.2)
+```
+
+IDs are never reused; removed lines are struck through with a date and reason.
+Test names start with the ID. Checks belong to sections, not questions.
+
+**Tools:**
+
+- `sync_specs` takes the full list of lines (ID, section, text, feature).
+  Lines not listed are removed; a line whose text or section changed resets to
+  unverified; unchanged lines keep their result. It reports agreed sections
+  that have no checks yet.
+- `report_progress` takes results per ID: `passing`, `failing` or `not_built`.
+
+**Progress tab** (`?view=progress` on both links): an overall bar ("2 of 6
+checks verified · last checked …") and each agreed section with its checks.
+A check is verified only when its tests pass, never just because a task is
+ticked. Clients see verified or not verified yet; developers also see failing
+checks and sections without checks. Clients only see the tab once checks
+exist.
+
+The `spec_checks` table holds only the current status (the record of who
+built what lives in the developer's repo). It stores the scope version each
+line was written against, for drift warnings later.
+
+**Not built yet, on purpose:** drift warnings in the app (assumed under
+control for now; `docs/spec-drift-and-changes.md` is the manual checklist) and
+client change requests.
+
+## 13. The website
 
 - **Home page:** leads with the skill ("Write your scope with Claude",
   marked Recommended), then the connector ("Let Claude publish and manage
@@ -322,6 +383,8 @@ it sends the update (verified in the network log).
   for updates a list of what will change and what will be deleted. If a file has
   no sections or questions, it suggests asking Claude with the skill to prepare
   it.
+- **Scope and Progress tabs** on the document page (section 12). Clients see
+  the tabs once checks exist.
 - **Document page (client and developer):**
   - Reads like a printed page; hover icons to respond (client) or reply and edit
     (developer); a thin coloured line in the margin shows each item's status.
@@ -336,7 +399,7 @@ it sends the update (verified in the network log).
   recent imports, edit details.
 - "Print / save PDF" prints the full page, expanding conversations.
 
-## 13. Data model
+## 14. Data model
 
 Postgres through Drizzle (`src/db/schema.ts`). Tables are created and updated
 on first use by `SCHEMA_SQL`; there is no separate migration step.
@@ -348,13 +411,14 @@ on first use by `SCHEMA_SQL`; there is no separate migration step.
 | `section_versions` | the text of a section or question (max two kept) | the developer changes that item's text |
 | `messages` | agree, disagree, question, comment, answer, reply, follow-up | immediately, on every response |
 | `imports` | the last two imported Markdown files, with a change summary | each import |
+| `spec_checks` | spec lines (ID, section, text, feature, scope version) with their latest test status | `sync_specs`; updated by `report_progress` |
 | `rate_events` | rate-limit counters | each rate-limited call |
 
 Production uses **Neon** via `DATABASE_URL`. Locally, without `DATABASE_URL`,
 the app uses **PGlite**, an embedded Postgres stored in `.data/` (local test
 data only; git-ignored; deleting it is harmless).
 
-## 14. Code map
+## 15. Code map
 
 ```
 src/
@@ -370,6 +434,7 @@ src/
   components/
     document-view.tsx                document page, developer panel, contents data
     outline.tsx                      contents sidebar / box with scroll highlight
+    progress-view.tsx                the Progress tab
     section-card.tsx, questions-block.tsx, item-actions.tsx, questions-client.tsx
     import-form.tsx                  import with preview; saves the record before updates
     skill-card.tsx, connect-card.tsx home and guide boxes
@@ -391,7 +456,7 @@ Tailwind CSS, Drizzle, mdast and react-markdown, Vercel. This Next.js version
 differs from older ones; check `node_modules/next/dist/docs/` before relying on
 remembered APIs.
 
-## 15. Ideas considered and not taken
+## 16. Ideas considered and not taken
 
 - **MCP as the format standard.** The Markdown format is the standard for the
   document; MCP is for the conversation after publishing (reading responses,
@@ -409,7 +474,7 @@ remembered APIs.
 - **Folder name `agreement-hub/`.** Renamed to `docs/scope/` so it is clearly
   part of the developer's project, not the portal.
 
-## 16. Timeline
+## 17. Timeline
 
 | Date | Change |
 |---|---|
@@ -421,8 +486,10 @@ remembered APIs.
 | 21–22 Oct | Two versions on the portal, removed items deleted, conversation record, downloads |
 | 22 Oct | Document versions, `docs/scope/` snapshots with version/date/time names, record saved before updates |
 | 22 Oct | All of the above merged and live; existing documents trimmed to two versions |
+| 22 Oct | Project notes; a question's answer no longer shown twice |
+| 26 Oct | Spec drift and change-request checklist; specs from scope in the skill, `sync_specs` and `report_progress`, Progress tab |
 
-Commits on `main`:
+Commits on `main` up to 22 October (later ones: `git log`):
 
 ```
 9793b6e Keep project snapshots in docs/scope/ instead of agreement-hub/
@@ -440,7 +507,7 @@ a3f2282 Present documents as a readable page instead of a form
 d62a86c Initial Next.js scaffold for Agreement Hub
 ```
 
-## 17. Setup notes
+## 18. Setup notes
 
 - The working copy is `C:\Users\xyzat\Documents\github\agreement-hub`, a git
   clone of `yankyfreeman/agreement-hub`. An older non-git copy,
@@ -451,8 +518,13 @@ d62a86c Initial Next.js scaffold for Agreement Hub
   needed. `.claude/launch.json` holds the dev-server setting for the Claude
   app's preview pane (not committed).
 
-## 18. Open items and possible next steps
+## 19. Open items and possible next steps
 
+- Drift warnings in the app: flag specs written against an older scope
+  version, sections without checks, and checks not reported recently (the
+  scope version is already stored with each check).
+- Client change requests: a "Request a change" action that runs the flow in
+  `docs/spec-drift-and-changes.md` section 7.
 - Drop the unused `sections.archived_at` column in a later release.
 - Re-upload the skill in Claude whenever it changes (it was updated with the
   `docs/scope/` snapshots on 22 October).

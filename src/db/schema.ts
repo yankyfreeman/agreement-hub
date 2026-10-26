@@ -94,6 +94,35 @@ export const imports = pgTable("imports", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export type CheckStatus = "pending" | "passing" | "failing";
+
+// One line of a feature spec in the developer's project (e.g. "BC-2 Changes are
+// allowed until 24 hours before"), tied to the scope section it implements,
+// with the latest test result. The specs themselves live in the developer's
+// repo; this is the live copy the Progress tab shows.
+export const specChecks = pgTable(
+  "spec_checks",
+  {
+    id: serial("id").primaryKey(),
+    documentId: integer("document_id")
+      .notNull()
+      .references(() => documents.id, { onDelete: "cascade" }),
+    sectionId: integer("section_id")
+      .notNull()
+      .references(() => sections.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    feature: text("feature").notNull().default(""),
+    text: text("text").notNull(),
+    position: integer("position").notNull(),
+    // The section's version when this line was written against it.
+    scopeVersion: integer("scope_version").notNull(),
+    status: text("status").$type<CheckStatus>().notNull().default("pending"),
+    // When a test result was last reported for this line.
+    checkedAt: timestamp("checked_at", { withTimezone: true }),
+  },
+  (t) => [unique().on(t.documentId, t.key)],
+);
+
 // One row per rate-limited call, e.g. bucket "create:<caller>". Rows older
 // than a day are pruned.
 export const rateEvents = pgTable("rate_events", {
@@ -167,6 +196,19 @@ export const SCHEMA_SQL = [
   `CREATE INDEX IF NOT EXISTS sections_document_idx ON sections (document_id)`,
   `CREATE INDEX IF NOT EXISTS messages_section_idx ON messages (section_id)`,
   `CREATE INDEX IF NOT EXISTS imports_document_idx ON imports (document_id)`,
+  `CREATE TABLE IF NOT EXISTS spec_checks (
+    id serial PRIMARY KEY,
+    document_id integer NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    section_id integer NOT NULL REFERENCES sections(id) ON DELETE CASCADE,
+    key text NOT NULL,
+    feature text NOT NULL DEFAULT '',
+    text text NOT NULL,
+    position integer NOT NULL,
+    scope_version integer NOT NULL,
+    status text NOT NULL DEFAULT 'pending',
+    checked_at timestamptz,
+    UNIQUE (document_id, key)
+  )`,
   `CREATE TABLE IF NOT EXISTS rate_events (
     id serial PRIMARY KEY,
     bucket text NOT NULL,
