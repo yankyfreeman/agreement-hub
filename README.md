@@ -170,6 +170,7 @@ src/
   lib/rate-limit.ts       rate limits for imports and MCP
   lib/record.ts           the conversation record export
   components/progress-view.tsx   the Progress tab
+docs/how-to.md            step-by-step guide for using Agreement Hub on a project
 docs/project-notes.md     every decision so far and why
 docs/spec-drift-and-changes.md   checklist for spec drift and client change requests
 skill/                    Claude skill that writes scope documents in this format
