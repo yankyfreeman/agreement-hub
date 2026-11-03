@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { reimportAction, updateDocumentAction } from "@/app/actions";
 import { toExistingItems, type DocumentView as View, type SectionView } from "@/lib/data";
+import { HighlightArea, HighlightButton } from "./highlight";
 import { ImportForm } from "./import-form";
 import { Markdown } from "./markdown";
 import { Outline, type OutlineEntry } from "./outline";
@@ -128,7 +129,7 @@ export function DocumentView({ view, token, tab }: { view: View; token: string; 
             <ProgressView view={view} />
           ) : (
             /* The document itself, laid out like a printed page */
-            <article className="doc rounded-sm bg-white px-5 py-10 shadow-sm ring-1 ring-zinc-200 sm:px-16 sm:py-14 print:px-0 print:py-0 print:shadow-none print:ring-0 dark:bg-zinc-950 dark:ring-zinc-800">
+            <HighlightArea className="doc rounded-sm bg-white px-5 py-10 shadow-sm ring-1 ring-zinc-200 sm:px-16 sm:py-14 print:px-0 print:py-0 print:shadow-none print:ring-0 dark:bg-zinc-950 dark:ring-zinc-800">
               <header className="mb-8 space-y-3 border-b border-zinc-200 pb-6 dark:border-zinc-800">
                 <h1 className="text-3xl font-bold leading-tight tracking-tight">{doc.title}</h1>
                 <p className="font-sans text-sm text-zinc-500">
@@ -138,7 +139,10 @@ export function DocumentView({ view, token, tab }: { view: View; token: string; 
                   (developer) · version {doc.version} · last activity{" "}
                   <LocalTime iso={doc.updatedAt.toISOString()} />
                 </p>
-                <SummaryLine sections={sections} />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <SummaryLine sections={sections} />
+                  <HighlightButton count={sections.filter((s) => s.status === "agreed").length} />
+                </div>
                 {doc.intro && (
                   <div className="text-zinc-700 dark:text-zinc-300">
                     <Markdown text={doc.intro} />
@@ -181,7 +185,7 @@ export function DocumentView({ view, token, tab }: { view: View; token: string; 
                   <p className="py-8 text-center font-sans text-sm text-zinc-500">Nothing to review yet.</p>
                 )}
               </div>
-            </article>
+            </HighlightArea>
           )}
         </main>
       </div>

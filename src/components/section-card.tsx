@@ -58,11 +58,16 @@ export function SectionBlock({
 }) {
   const { current } = section;
   const mode = role === "developer" ? "dev-section" : section.infoOnly ? "info" : "section";
+  // Tinted while "Highlight agreed" is on (see highlight.tsx).
+  const highlight =
+    section.status === "agreed"
+      ? "rounded-r-sm group-data-[highlight=agreed]/doc:bg-emerald-50 dark:group-data-[highlight=agreed]/doc:bg-emerald-950/40"
+      : "";
 
   return (
     <article
       id={`section-${section.id}`}
-      className={`group relative -ml-4 scroll-mt-6 break-inside-avoid border-l-2 py-2 pl-[14px] pr-10 sm:pr-0 ${MARKER[section.status]}`}
+      className={`group relative -ml-4 scroll-mt-6 break-inside-avoid border-l-2 py-2 pl-[14px] pr-10 sm:pr-0 ${MARKER[section.status]} ${highlight}`}
     >
       <h3 className="mb-1 text-lg font-semibold">{current.title}</h3>
       {current.body ? (
