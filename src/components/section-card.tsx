@@ -86,6 +86,7 @@ export function SectionBlock({
           title={current.title}
           body={current.body}
           version={current.version}
+          agreed={section.status === "agreed"}
         />
       )}
     </article>

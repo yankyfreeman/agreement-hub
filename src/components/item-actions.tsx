@@ -32,6 +32,7 @@ export function ItemActions({
   title,
   body,
   version,
+  agreed = false,
 }: {
   mode: "section" | "info" | "dev-section" | "dev-question";
   respond: (form: FormData) => Promise<void>;
@@ -39,6 +40,8 @@ export function ItemActions({
   title?: string;
   body?: string;
   version?: number;
+  /** The client already agreed to this version: Agree shows as given and can't be sent again. */
+  agreed?: boolean;
 }) {
   const [open, setOpen] = useState<Panel | null>(null);
   const toggle = (p: Panel) => setOpen((o) => (o === p ? null : p));
@@ -57,7 +60,7 @@ export function ItemActions({
           <>
             <form action={respond}>
               <input type="hidden" name="kind" value="agree" />
-              <AgreeButton />
+              <AgreeButton agreed={agreed} />
             </form>
             <IconButton label="Disagree" active={open === "disagree"} onClick={() => toggle("disagree")}>
               <ThumbsDown size={16} />
@@ -186,8 +189,21 @@ function IconButton({
   );
 }
 
-function AgreeButton() {
+function AgreeButton({ agreed }: { agreed: boolean }) {
   const { pending } = useFormStatus();
+  if (agreed) {
+    return (
+      <button
+        type="button"
+        title="You agreed to this section"
+        aria-label="Agreed"
+        aria-disabled
+        className="flex h-8 w-8 cursor-default items-center justify-center rounded-full border border-emerald-600 bg-emerald-600 text-white"
+      >
+        <ThumbsUp size={16} />
+      </button>
+    );
+  }
   return (
     <button type="submit" title="Agree" aria-label="Agree" disabled={pending} className={iconClass}>
       <ThumbsUp size={16} />

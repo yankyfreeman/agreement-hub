@@ -488,6 +488,16 @@ export async function addMessage(
   const current = await currentVersion(sectionId);
   if (!current) return;
   const db = await getDb();
+  // Agreeing twice to the same version adds nothing: the client can still
+  // disagree or comment.
+  if (kind === "agree") {
+    const onVersion = await db
+      .select()
+      .from(messages)
+      .where(and(eq(messages.sectionId, sectionId), eq(messages.version, current.version)))
+      .orderBy(asc(messages.id));
+    if (statusOf(item, current, onVersion) === "agreed") return;
+  }
   await db.insert(messages).values({
     sectionId,
     version: current.version,
