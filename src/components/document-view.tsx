@@ -243,9 +243,11 @@ function DeveloperPanel({ view, token }: { view: View; token: string }) {
         <p className="text-sm font-medium">Keep a copy in your project</p>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Agreement Hub keeps only the current and previous version of each section, with the
-          messages about them. Keep both files in your project&apos;s{" "}
-          <code className="text-xs">docs/scope/</code> folder and commit them before and after
-          each update. Claude with the Agreement Hub skill does this for you.
+          messages about them. Your project keeps the full history: save the files as{" "}
+          <code className="text-xs">docs/scope/scope.md</code> and{" "}
+          <code className="text-xs">docs/scope/record.md</code>, replacing the old ones, and
+          commit before and after each update. Git keeps every version. Claude with the
+          Agreement Hub skill does this for you.
         </p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
           <a href={`/manage/${token}/export/document`} className="underline" download>

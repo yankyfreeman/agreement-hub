@@ -22,9 +22,10 @@ holds the full history of the document and the conversation.
 5. You **reply** in the same threads, or ask for more detail on a question.
 6. **Import the next version** of the Markdown into the same document when the
    scope changes.
-7. **Keep the history in your project**: download the document and its
-   conversation record from the developer page after each update and commit
-   them. The skill does this for you when Claude is connected.
+7. **Keep the history in your project**: save the document and its
+   conversation record as `docs/scope/scope.md` and `docs/scope/record.md`
+   after each update and commit them; Git keeps every version. The skill does
+   this for you when Claude is connected.
 
 ### Connect Claude (MCP)
 
@@ -104,13 +105,15 @@ that changes it. Exports write it under the title as
 `**Agreement Hub version:** 3 · **Saved:** 2026-10-22 14:30 UTC`; the importer
 ignores that line.
 
-In the developer's project the files live in `docs/scope/` at the root, one
-snapshot per save, named `<prefix>-scope-v3_2026-10-22_14-30.md` (the
-document) and `<prefix>-record-v3_2026-10-22_14-30.md` (the conversation
-record), both committed, plus a git-ignored `links.local.md`. The time is UTC
-and matches the line inside the file. The skill saves and commits snapshots
-before and after every update; the developer can change the prefix at any
-time, which renames the files but keeps their version and time.
+In the developer's project there is one file for each, replaced in place and
+committed on every save, so Git keeps the versions: `docs/scope/scope.md` (the
+document) and `docs/scope/record.md` (the conversation record), plus a
+git-ignored `links.local.md`. Each document version is committed as
+`Scope v3 (2026-10-22 14:30 UTC)` and tagged `scope-v3`, so
+`git diff scope-v2 scope-v3 -- docs/scope/scope.md` shows exactly what changed.
+The skill downloads both files from the export links (no retyping) and commits
+them before and after every update. The names come from `PROJECT_FILE` and
+`versionCommit` in `src/lib/data.ts`.
 
 Status is always about the **current** version of an item, and every message
 shows who wrote it, when, and which version it was about.

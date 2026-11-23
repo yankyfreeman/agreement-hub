@@ -8,7 +8,7 @@ build: "write the specs", "break the scope into features", "plan the build",
 
 | Layer | Answers | Where |
 |---|---|---|
-| Scope | What the client agreed | Agreement Hub, snapshots in `docs/scope/` |
+| Scope | What the client agreed | Agreement Hub, and `docs/scope/scope.md` (versions in Git) |
 | **Spec** | What the system must do, as testable lines | `specs/<feature>/spec.md` |
 | Plan | How it will be built | `specs/<feature>/plan.md` |
 | Tasks | The steps to build it | `specs/<feature>/tasks.md` |
@@ -22,7 +22,7 @@ and tasks, and keep the spec lines in the format below.
 ## Writing the specs
 
 1. Read the agreed scope: `get_markdown` with the connector, otherwise the
-   latest `docs/scope/*-scope-*.md` snapshot. Also read the client's answers
+   project's `docs/scope/scope.md`. Also read the client's answers
    and comments (`get_document`): answers often decide the details.
 2. Group the scope into features. One feature usually covers one `##` section
    or a few related `###` parts. Name the folder after the feature in

@@ -12,6 +12,25 @@ const STEPS = [
   ["Update and keep the record", "Re-import the next version. Your project keeps the full history; Agreement Hub keeps the latest two."],
 ];
 
+const AI_PLANNING = [
+  [
+    "Asks what you both missed",
+    "Claude reviews the scope and every client response for gaps: unclear rules, edge cases and real-world situations, like a refund after the deadline or two customers booking the last slot. They become questions now, not surprises mid-build.",
+  ],
+  [
+    "Turns the agreement into specs and tasks",
+    "Once the client agrees, Claude breaks the scope into feature specs, one testable line per behaviour linked to the section it came from, then a plan and tasks.",
+  ],
+  [
+    "Keeps every version",
+    "Each update gets a version number, and only the sections that changed go back to the client; everything already agreed stays agreed. Your project keeps one scope file that Claude updates and commits with each version, so Git holds the full history: what changed, when, and who agreed to it.",
+  ],
+  [
+    "Shows the client real progress",
+    "Test results flow back here, so your client sees which of the things they agreed to are built and verified.",
+  ],
+];
+
 export default function Home() {
   return (
     <main className="mx-auto w-full max-w-3xl space-y-10 px-4 py-12">
@@ -26,6 +45,30 @@ export default function Home() {
           record of what was agreed, what was disputed and how it was settled.
         </p>
       </header>
+
+      <section className="space-y-4">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold">Plan with AI, not just build with it</h2>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            With the Agreement Hub skill, Claude follows the whole conversation between you and
+            your client: every section, answer, objection and reply. It uses that to make the plan
+            better, then carries it all the way into the build.
+          </p>
+        </div>
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {AI_PLANNING.map(([title, text]) => (
+            <li key={title} className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+              <p className="text-sm font-semibold">{title}</p>
+              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{text}</p>
+            </li>
+          ))}
+        </ul>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          The result: fewer surprises, less back-and-forth, and a straight line from the first
+          conversation to working software. You make the decisions; Claude does the writing and
+          the tracking.
+        </p>
+      </section>
 
       <SkillCard />
 

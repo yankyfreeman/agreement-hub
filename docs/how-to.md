@@ -77,8 +77,9 @@ not included. Give Claude any notes, emails or an old document.
 >
 > or: "Here's my existing proposal. Prepare it for Agreement Hub."
 
-Claude writes `docs/scope/<prefix>-scope-v1_….md`. Read it fully. Anything
-undecided should be a **question for the client** (`Q1`, `Q2`…), not a guess.
+Claude writes `docs/scope/scope.md`, then reviews it for gaps and edge cases
+and tells you which questions it added. Read it fully. Anything undecided
+should be a **question for the client** (`Q1`, `Q2`…), not a guess.
 
 ### Step 3. Publish it
 
@@ -119,14 +120,14 @@ Claude shows you the reply before posting unless you've given the exact words.
 
 What Claude does, in order:
 
-1. Saves a snapshot of the current document and the conversation record in
-   `docs/scope/` and commits (Agreement Hub keeps only the last 2 versions;
-   your project keeps the full history).
+1. Saves the current `scope.md` and `record.md` in `docs/scope/` and commits
+   (Agreement Hub keeps only the last 2 versions; your project's Git history
+   keeps them all).
 2. Edits only the sections that change, keeping headings and question numbers.
 3. Shows you a **preview**: which sections the client must review again, and
    anything removed.
 4. Applies it **only after you confirm**.
-5. Saves a snapshot of the new version and commits.
+5. Saves the new version over `scope.md`, commits and tags it (`scope-v3`).
 
 Check the preview carefully: a section whose text changed loses its
 agreement and goes back to the client. Unchanged sections keep it.
@@ -187,9 +188,9 @@ Never change code straight from a call or message. Follow
 ```
 your-project/
   docs/scope/
-    <prefix>-scope-v3_2026-10-22_14-30.md    the document, each version (committed)
-    <prefix>-record-v3_2026-10-22_14-28.md   who said what, each save (committed)
-    links.local.md                           developer + client links (never committed)
+    scope.md         the document, always the current version (committed, tagged per version)
+    record.md        who said what, the latest record (committed)
+    links.local.md   developer + client links (never committed)
   specs/<feature>/
     spec.md    what it must do (IDs, scope sections)
     plan.md    how it's built
@@ -199,9 +200,14 @@ your-project/
 Agreement Hub holds only the live copy: the current and previous version of
 each section, its messages, and the spec lines with their test status.
 
-- Change the file prefix any time: "Use `clinic` as the prefix." Only the
-  prefix changes; versions and times stay.
-- Snapshot times are UTC and match the version line inside each file.
+Git keeps every version of `scope.md`. Each one is committed as
+`Scope v3 (2026-10-22 14:30 UTC)` and tagged `scope-v3`:
+
+- See an old version: `git show scope-v2:docs/scope/scope.md`, or open the
+  tag on GitHub.
+- See exactly what changed: `git diff scope-v2 scope-v3 -- docs/scope/scope.md`.
+- Push the tags with your commits: `git push --follow-tags`.
+- Times are UTC and match the version line inside the file.
 
 ---
 
@@ -225,6 +231,7 @@ each section, its messages, and the spec lines with their test status.
 | Claude doesn't use the skill | Check `~/.claude/skills/agreement-hub-scope/SKILL.md` exists; start a new session; or say "use the agreement-hub-scope skill" |
 | Claude has no Agreement Hub tools | `claude mcp list`; add it again (Part 1, step 2); start a new session |
 | Claude asks for the developer link | It's in `docs/scope/links.local.md`, or your bookmark |
-| Lost the developer link | It can't be recovered. Publish the latest scope snapshot as a new document and send the client the new link |
+| Lost the developer link | It can't be recovered. Publish `docs/scope/scope.md` as a new document and send the client the new link |
+| Project has old dated files (`…-scope-v2_2026-….md`) | Say "switch docs/scope to one file". Claude keeps the latest as `scope.md` and removes the old copies; they stay in Git history |
 | "Too many requests" | Rate limit; wait a minute and retry |
 | Client doesn't see the Progress tab | It appears once spec lines have been synced |

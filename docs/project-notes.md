@@ -61,14 +61,15 @@ focus.
 2. Plan the project with Claude and say "make a scope document for the client".
    Claude writes it in the right format.
 3. "Publish it to Agreement Hub." Claude creates the document and returns the
-   private **developer link** and the **client link**, and saves the first
-   snapshot in the project's `docs/scope/` folder.
+   private **developer link** and the **client link**, and saves version 1 as
+   the project's `docs/scope/scope.md`.
 4. The developer sends the client link. The client responds on the website.
 5. "What did the client say?" Claude summarises disagreements, questions and
    answers. "Reply to Q2…" Claude replies.
-6. "Update section 4 and send it." Claude saves a snapshot, edits the document,
+6. "Update section 4 and send it." Claude saves the record, edits the document,
    previews the change, applies it after the developer confirms, and saves the
-   new snapshot. Each save is committed with git.
+   new version over `scope.md`. Each save is committed with git, and each
+   version tagged.
 
 **With the website only:** import a Markdown file on the home page, copy the
 client link, reply on the developer page, import updated versions, and use the
@@ -165,9 +166,9 @@ Connect:
 |---|---|
 | `create_document` | Publishes Markdown with client/developer names and `info_only` sections; returns the developer and client links (version 1) |
 | `get_open_items` | What needs the developer: disagreements, questions, new comments, answers, and what is waiting for the client |
-| `get_document` | The conversation record (section 11), with the exact snapshot file name |
+| `get_document` | The conversation record (section 11), to save as `docs/scope/record.md` |
 | `reply` | Replies on a section or question; `ask_for_more_detail` reopens a question |
-| `get_markdown` | The current document as Markdown, with the exact snapshot file name |
+| `get_markdown` | The current document as Markdown, with the commit message and tag for its version |
 | `preview_update` | What an updated file would change (changed, new, removed, renumbered), without changing anything |
 | `apply_update` | Imports the update; returns the new version number |
 | `sync_specs` | Sends the project's spec lines for the Progress tab (section 12) |
@@ -273,43 +274,60 @@ The document page shows "version N" to both sides.
 
 ## 11. History in the developer's project: `docs/scope/`
 
-The snapshots live **in the developer's own repo**, in `docs/scope/` at the
-project root. Nothing in that folder is stored on the portal.
+The history lives **in the developer's own repo**, in `docs/scope/` at the
+project root, as **one file per kind, versioned by Git**. Nothing in that
+folder is stored on the portal.
 
 ```
 booking-app/                 the developer's project (their git repo)
   src/
   docs/
     scope/
-      booking-app-scope-v1_2026-10-20_09-15.md
-      booking-app-scope-v2_2026-10-21_16-40.md
-      booking-app-record-v2_2026-10-22_14-28.md
-      booking-app-scope-v3_2026-10-22_14-30.md
+      scope.md               the document, always the current version
+      record.md              the conversation record, always the latest
       links.local.md         secret links, git-ignored
 ```
 
-- **Scope file** (`<prefix>-scope-v<version>_<date>_<time>.md`): the document,
-  what is proposed to the client.
-- **Record file** (`<prefix>-record-v<version>_<date>_<time>.md`): the
-  conversation, every section's and question's status and every message, with
-  who wrote it, when and on which version. No links, so it is safe to commit.
-- **Version, date and time (UTC)** in the name match the line inside the file.
-  `get_markdown`, `get_document` and the website downloads produce the same
-  names.
-- **Prefix** defaults to the project's name (`booking-app`). The developer can
-  change it at any time; Claude renames every snapshot with `git mv`, changing
-  only the prefix, never the version or time.
-- Every save is a new file (nothing is overwritten), and each save point is
-  committed, e.g. `Scope v3 (2026-10-22 14:30 UTC): email reminders, Q5 added`.
+- **`scope.md`**: the document, what is proposed to the client. Replaced on
+  each new version, committed as `Scope v3 (2026-10-22 14:30 UTC): <summary>`
+  and tagged `scope-v3` (annotated tag, pushed with `git push --follow-tags`).
+- **`record.md`**: every section's and question's status and every message,
+  with who wrote it, when and on which version. No links, so it is safe to
+  commit. Committed whenever it is saved.
+- Both files carry the `Agreement Hub version … Saved …` line, in UTC.
+- **Saved by download, not retyped:** the skill runs
+  `curl -sSf "<developer link>/export/document" -o docs/scope/scope.md` (and
+  `/export/record`), so the file is exactly what the portal holds. The website's
+  **Document (.md)** and **Conversation record (.md)** buttons download the same
+  files under the same names.
+- `scope.md` is saved only when its version changes, so a re-save doesn't
+  create a diff that only touches the Saved time.
+- Any version: `git show scope-v2:docs/scope/scope.md`. What changed:
+  `git diff scope-v2 scope-v3 -- docs/scope/scope.md`.
+- Names come from one place: `PROJECT_FILE` and `versionCommit` in
+  `src/lib/data.ts` (used by the MCP tools and the downloads).
+- **No Git:** the skill suggests `git init`; if the developer declines, it
+  keeps `docs/scope/versions/scope-v<N>.md` copies instead.
+- **Older projects** with dated snapshot files: the skill offers to switch once
+  (latest becomes `scope.md`/`record.md`, old files removed with `git rm`, still
+  in history).
+
+**Why one file and not a folder of copies** (decided 23 November): a scope
+document is a *state* (version 5 replaces version 4), not a *step*. Database
+migrations keep every file because the database is all of them applied in
+order; a scope is like `schema.prisma`, one file whose history Git keeps. One
+file gives exact diffs between versions (the "nothing changes quietly" rule),
+one stable path for specs and AI to read, and no duplicated text. The cost is
+depending on Git, which every target user has.
 
 ### Save points
 
 | When | Save |
 |---|---|
-| After publishing | scope snapshot (version 1), links in `links.local.md` |
-| **Right before every update** (required: older versions are deleted then) | record snapshot, plus a scope snapshot if none exists for the current version, then commit |
-| Right after every update | scope snapshot of the new version, then commit |
-| When checking the client's responses (optional) | record snapshot |
+| After publishing | `scope.md` (version 1), commit and tag `scope-v1`; links in `links.local.md` |
+| **Right before every update** (required: older versions are deleted then) | `record.md`, plus `scope.md` if it isn't at the current version, then commit |
+| Right after every update | `scope.md` (new version), commit and tag |
+| When checking the client's responses (optional) | `record.md`, then commit |
 
 The portal can't verify that the developer saved a copy. The skill always saves
 first; on the website, **Apply update** downloads the conversation record before
@@ -326,7 +344,7 @@ cases, and steps in where the AI misses something.
 
 ```
 AGREEMENT HUB (portal)                  DEVELOPER'S REPO
-Client link                             docs/scope/        scope snapshots
+Client link                             docs/scope/        scope.md, record.md
  ├─ Scope tab      what was agreed      specs/<feature>/   spec.md, plan.md, tasks.md
  └─ Progress tab   what is verified     tests              one or more per spec ID
 MCP: sync_specs, report_progress        Claude Code + the skill do the work
@@ -427,7 +445,7 @@ src/
     guide/page.tsx                   "Write your scope document"
     manage/[token]/                  developer page
       imports/[id]/route.ts          download an imported file
-      export/[kind]/route.ts         download the document or record snapshot
+      export/[kind]/route.ts         download scope.md or record.md
     d/[token]/                       client page
     api/mcp/route.ts                 MCP server (per-request handler, rate limit)
     actions.ts                       server actions (all writes; role from the token)
@@ -469,8 +487,9 @@ remembered APIs.
   the key (section 7).
 - **Keeping full history on the portal.** Replaced by two versions on the
   portal and the full history in the developer's repo (sections 9 and 11).
-- **Fixed file names overwritten on each save.** Replaced by one snapshot per
-  save with the version, date and time in the name, plus git commits.
+- **One dated snapshot file per save** (22 October to 23 November). Replaced
+  by one `scope.md` and one `record.md` versioned by Git commits and tags: the
+  scope is a state, not a migration (section 11).
 - **Folder name `agreement-hub/`.** Renamed to `docs/scope/` so it is clearly
   part of the developer's project, not the portal.
 
@@ -488,6 +507,8 @@ remembered APIs.
 | 22 Oct | All of the above merged and live; existing documents trimmed to two versions |
 | 22 Oct | Project notes; a question's answer no longer shown twice |
 | 26 Oct | Spec drift and change-request checklist; specs from scope in the skill, `sync_specs` and `report_progress`, Progress tab |
+| 3–4 Nov | Highlight agreed sections; the client can agree to a section only once per version |
+| 23 Nov | Home page: planning with AI and versions; skill looks for gaps and edge cases; one `scope.md` + `record.md` versioned by Git replaces dated snapshots |
 
 Commits on `main` up to 22 October (later ones: `git log`):
 
@@ -526,8 +547,9 @@ d62a86c Initial Next.js scaffold for Agreement Hub
 - Client change requests: a "Request a change" action that runs the flow in
   `docs/spec-drift-and-changes.md` section 7.
 - Drop the unused `sections.archived_at` column in a later release.
-- Re-upload the skill in Claude whenever it changes (it was updated with the
-  `docs/scope/` snapshots on 22 October).
+- Re-upload the skill in Claude whenever it changes (last updated 23 November:
+  gap review, one `scope.md` versioned by Git). Projects with their own copy
+  (car wash) need the new files copied in.
 - Email notifications when the other side responds (would need an email
   service; free tiers are enough at this size).
 - A document list for developers would need accounts (GitHub sign-in or
