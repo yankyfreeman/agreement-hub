@@ -463,8 +463,8 @@ In the project, save the document from get_markdown as ${PROJECT_FILE.scope} and
         [
           `Synced ${lines.length} checks: ${counts.added} new, ${counts.changed} changed (to verify again), ${counts.removed} removed, ${counts.unchanged} unchanged.`,
           uncovered.length
-            ? `Agreed sections with no checks yet: ${uncovered.map((s) => label(s)).join("; ")}.`
-            : "Every agreed section has checks.",
+            ? `Sections with no checks yet: ${uncovered.map((s) => label(s)).join("; ")}.`
+            : "Every section to agree on has checks.",
           `The client sees them on the Progress tab: ${links(view, origin).client}?view=progress`,
         ].join("\n"),
       );

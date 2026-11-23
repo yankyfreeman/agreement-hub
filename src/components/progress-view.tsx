@@ -13,9 +13,9 @@ export function ProgressView({ view }: { view: DocumentView }) {
   const bySection = new Map<number, SpecCheck[]>();
   for (const c of checks) bySection.set(c.sectionId, [...(bySection.get(c.sectionId) ?? []), c]);
 
-  const agreed = view.sections.filter((s) => s.kind === "section");
-  const shown = agreed.filter((s) => bySection.has(s.id) || (isDeveloper && !s.infoOnly));
-  const notPlanned = agreed.filter((s) => !s.infoOnly && !bySection.has(s.id)).length;
+  const sections = view.sections.filter((s) => s.kind === "section");
+  const shown = sections.filter((s) => bySection.has(s.id) || (isDeveloper && !s.infoOnly));
+  const notPlanned = sections.filter((s) => !s.infoOnly && !bySection.has(s.id)).length;
   const verified = checks.filter((c) => c.status === "passing").length;
   const failing = checks.filter((c) => c.status === "failing").length;
   const lastChecked = checks
@@ -30,7 +30,7 @@ export function ProgressView({ view }: { view: DocumentView }) {
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           {isDeveloper
             ? "Each check is one line of a feature spec in your project, tied to the section it implements. It shows as verified when its tests pass."
-            : "Each check is something you agreed to. It turns green when an automated test confirms it works."}
+            : "Each check is one thing the app must do, taken from the scope. It turns green when an automated test confirms it works."}
         </p>
         {checks.length > 0 ? (
           <div className="space-y-2">
@@ -67,7 +67,7 @@ export function ProgressView({ view }: { view: DocumentView }) {
           ))}
           {!isDeveloper && notPlanned > 0 && (
             <p className="text-sm text-zinc-500">
-              {notPlanned} agreed {notPlanned === 1 ? "section doesn't" : "sections don't"} have checks
+              {notPlanned} {notPlanned === 1 ? "section doesn't" : "sections don't"} have checks
               yet.
             </p>
           )}
