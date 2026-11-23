@@ -224,8 +224,8 @@ export function ImportForm({
           <SubmitButton>{saving ? "Saving the record…" : submitLabel}</SubmitButton>
           {saveFirst && (
             <p className="text-xs text-zinc-500">
-              Downloads the conversation record first. Keep it in your project&apos;s
-              docs/scope/ folder.
+              Downloads the conversation record first. Save it as docs/scope/record.md in
+              your project and commit it.
             </p>
           )}
         </div>

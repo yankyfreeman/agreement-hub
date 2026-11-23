@@ -17,10 +17,8 @@ import {
 import {
   parseMarkdown,
   planImport,
-  slug,
   summarizePlan,
   toMarkdown,
-  withoutNumber,
   type ExistingItem,
   type ParsedDocument,
 } from "./markdown-import";
@@ -218,18 +216,20 @@ export function documentMarkdown(view: DocumentView, savedAt = new Date()) {
   });
 }
 
-/** The default prefix for the project's files, e.g. "booking-app". Developers can change it. */
-export function filePrefix(document: Document) {
-  return slug(withoutNumber(document.title).replace(/:?\s*project scope$/i, "")) || "project";
-}
+/**
+ * Where the developer's project keeps the scope: one file each, replaced in
+ * place on every save. Git keeps the versions.
+ */
+export const PROJECT_FILE = { scope: "docs/scope/scope.md", record: "docs/scope/record.md" } as const;
 
 /**
- * A snapshot's file name in the project, e.g. "booking-app-scope-v3_2026-10-22_14-30.md".
- * The time is UTC and matches the "Saved" time written inside the file.
+ * How a version of the document is committed and tagged in the project, e.g.
+ * "Scope v3 (2026-10-22 14:30 UTC)" and "scope-v3". The time is UTC and
+ * matches the "Saved" time written inside the file.
  */
-export function snapshotName(document: Document, kind: "scope" | "record", savedAt: Date) {
+export function versionCommit(document: Document, savedAt: Date) {
   const [date, time] = savedAt.toISOString().slice(0, 16).split("T");
-  return `${filePrefix(document)}-${kind}-v${document.version}_${date}_${time.replace(":", "-")}.md`;
+  return { message: `Scope v${document.version} (${date} ${time} UTC)`, tag: `scope-v${document.version}` };
 }
 
 const nextVersion = sql`${documents.version} + 1`;

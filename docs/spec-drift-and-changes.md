@@ -21,7 +21,7 @@ changes spec-first.
 
 | Layer | Answers | Lives in | Changed by |
 |---|---|---|---|
-| **Scope** | What the client agreed | Agreement Hub, snapshots in `docs/scope/` | Only with the client's agreement |
+| **Scope** | What the client agreed | Agreement Hub, and `docs/scope/scope.md` (versions in Git) | Only with the client's agreement |
 | **Spec** | What the system must do, line by line, testable | `specs/<feature>/spec.md` | Only when the scope changes, or to make it more precise |
 | **Plan** | How it will be built | `specs/<feature>/plan.md` | Developer / AI, freely |
 | **Tasks** | Steps to build it | `specs/<feature>/tasks.md` | Developer / AI, freely; disposable |
@@ -107,8 +107,8 @@ Ask the AI to fill this in, and check it yourself before merging.
       and tablet sizes, wrong input, the busiest realistic load.
 - [ ] Anything not finished, or knowingly different from the spec, is listed
       for the client. No surprises in the demo.
-- [ ] The current scope and conversation record are saved in `docs/scope/`
-      and committed.
+- [ ] The current `docs/scope/scope.md` and `record.md` are saved and
+      committed, and the version is tagged.
 
 ---
 
@@ -150,9 +150,9 @@ order every time, even for "tiny" requests.
 
 - [ ] Tell the client the impact in plain words: what changes, what it costs
       in time or money, and anything that gets dropped or delayed.
-- [ ] Update the scope **in Agreement Hub** (save the snapshot and record
-      first, as the skill does), so the client reviews just the changed
-      section.
+- [ ] Update the scope **in Agreement Hub** (save `scope.md` and
+      `record.md` first, as the skill does), so the client reviews just the
+      changed section.
 - [ ] **Wait for the client to agree** in Agreement Hub before touching the
       spec or code. A "yes" on a call becomes a written agreement there.
 - [ ] If the client says no, or wants to think: nothing else changes. Note
@@ -176,8 +176,8 @@ order every time, even for "tiny" requests.
 - [ ] Try the changed behaviour yourself, including its real-world cases.
 - [ ] Commit with the IDs and scope version:
       `Scope v4 / BC-2: changes allowed until 12h before (client request 2026-11-02)`.
-- [ ] The scope snapshot and conversation record in `docs/scope/` are up to
-      date.
+- [ ] `docs/scope/scope.md` and `record.md` are up to date, committed and
+      tagged.
 - [ ] Tell the client it's done, and where they can see it.
 
 ### Special cases
@@ -217,7 +217,7 @@ Read every specs/*/spec.md, the tests and the code. List:
 1. spec lines (by ID) with no test,
 2. tests that check behaviour but name no spec ID,
 3. places where the code does something the spec doesn't describe,
-4. scope sections in docs/scope/ with no spec, and specs with no scope section.
+4. scope sections in docs/scope/scope.md with no spec, and specs with no scope section.
 Don't change anything; just report.
 ```
 
