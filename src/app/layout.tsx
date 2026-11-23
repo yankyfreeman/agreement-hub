@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Agreement Hub",
+  title: "ag-hub",
   description: "Share a scope document with your client and keep a record of what was agreed.",
   // Document links are secret: keep them out of search engines and never send
   // them to other sites as a referrer. ("no-referrer" would also blank the

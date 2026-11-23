@@ -8,7 +8,7 @@ build: "write the specs", "break the scope into features", "plan the build",
 
 | Layer | Answers | Where |
 |---|---|---|
-| Scope | What the client agreed | Agreement Hub, and `docs/scope/scope.md` (versions in Git) |
+| Scope | What the client agreed | ag-hub, and `docs/scope/scope.md` (versions in Git) |
 | **Spec** | What the system must do, as testable lines | `specs/<feature>/spec.md` |
 | Plan | How it will be built | `specs/<feature>/plan.md` |
 | Tasks | The steps to build it | `specs/<feature>/tasks.md` |
@@ -31,7 +31,7 @@ and tasks, and keep the spec lines in the format below.
 
 ```markdown
 # Booking changes
-Scope: 3.2 Changing or cancelling (Agreement Hub version 3)
+Scope: 3.2 Changing or cancelling (ag-hub version 3)
 
 - **BC-1** The confirmation email has a link to change or cancel. (3.2)
 - **BC-2** Changes are allowed until 24 hours before the appointment. (3.2)
@@ -96,5 +96,5 @@ Rules for spec lines:
 Behaviour changes go spec-first: change the spec line (or add one with a new
 ID), call `sync_specs`, update the tests, then the code. A changed line has to
 be verified again. If the change is something the client would notice and they
-haven't agreed it, stop: it goes through Agreement Hub first, as a scope
+haven't agreed it, stop: it goes through ag-hub first, as a scope
 update the client agrees to.

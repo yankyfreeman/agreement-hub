@@ -15,7 +15,7 @@ async function handler(request: Request) {
   }
   const handle = createMcpHandler(
     (server) => registerTools(server, { origin: getPublicOrigin(request), caller }),
-    { serverInfo: { name: "agreement-hub", version: "1.0.0" }, instructions: INSTRUCTIONS },
+    { serverInfo: { name: "ag-hub", version: "1.0.0" }, instructions: INSTRUCTIONS },
   );
   return handle(request);
 }

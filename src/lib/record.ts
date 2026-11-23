@@ -1,5 +1,5 @@
 // The document's conversation as Markdown: every item's status and every
-// message, with who wrote it, when, and on which version. Agreement Hub keeps
+// message, with who wrote it, when, and on which version. ag-hub keeps
 // only the current and previous versions, so developers save this file in
 // their project. It contains no links, so it is safe to commit.
 
@@ -77,10 +77,10 @@ export function documentRecord(view: DocumentView, { includeText = true, savedAt
   const { document: doc, sections } = view;
   return [
     `# ${doc.title}: conversation record`,
-    `**Agreement Hub version:** ${doc.version} · **Saved:** ${when(savedAt)}`,
+    `**ag-hub version:** ${doc.version} · **Saved:** ${when(savedAt)}`,
     `Client: ${doc.clientName} · Developer: ${doc.developerName}`,
     `Status: ${statusSummary(sections) || "nothing to review yet"}`,
-    "Agreement Hub keeps only the current and previous version of each item, with the messages about them. Keep this file in the project next to the scope document, and save it again after each update.",
+    "ag-hub keeps only the current and previous version of each item, with the messages about them. Keep this file in the project next to the scope document, and save it again after each update.",
     includeText && doc.intro ? doc.intro : "",
     ...sections.map((s) => describeItem(s, includeText)),
   ]

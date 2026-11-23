@@ -4,12 +4,12 @@ import { ConnectCard } from "@/components/connect-card";
 import { SkillCard } from "@/components/skill-card";
 import { CopyText } from "@/components/ui";
 
-export const metadata: Metadata = { title: "Write your scope · Agreement Hub" };
+export const metadata: Metadata = { title: "Write your scope · ag-hub" };
 
 const AI_PROMPT = `Write the agreed project scope as a Markdown document that I will share with my client for review. Follow this format exactly, because a tool imports it automatically:
 
 - Start with one "# " heading: the document title.
-- Under the title, optionally add short lines such as who it is prepared for and by, and nothing else. Agreement Hub numbers the versions itself.
+- Under the title, optionally add short lines such as who it is prepared for and by, and nothing else. ag-hub numbers the versions itself.
 - Use numbered "## " headings for the main sections, e.g. "## 4. Worker App".
 - If a section has parts the client should agree to separately, use numbered "### " subheadings, e.g. "### 4.1 Sign-in". Each "##" or "###" heading with text under it becomes one item the client agrees or disagrees with, so keep each one focused on a single topic.
 - Write plainly for a non-technical client. Bullet lists, numbered steps, tables, bold text and "> " notes are fine.
@@ -60,14 +60,14 @@ export default function GuidePage() {
     <main className="mx-auto w-full max-w-3xl space-y-8 px-4 py-12">
       <nav>
         <Link href="/" className="text-sm font-semibold">
-          ← Agreement Hub
+          ← ag-hub
         </Link>
       </nav>
 
       <header className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight">Write your scope document</h1>
         <p className="text-zinc-600 dark:text-zinc-400">
-          Agreement Hub turns your scope document into sections the client agrees to and
+          ag-hub turns your scope document into sections the client agrees to and
           questions the client answers. You focus on the project; the skill takes care of the
           rest.
         </p>
@@ -124,7 +124,7 @@ export default function GuidePage() {
           <strong>Import an updated Markdown version</strong> on the developer page. Sections are
           matched by heading text, then by number; questions by their Q number. Changed items get
           a new version and need the client&apos;s response again. Unchanged items keep their
-          agreement. Items no longer in the file are deleted with their responses. Agreement Hub
+          agreement. Items no longer in the file are deleted with their responses. ag-hub
           keeps only the current and previous version of each item, so download the document and
           its conversation record from the developer page after each update and keep them in
           your project.

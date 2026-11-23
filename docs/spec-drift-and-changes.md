@@ -1,7 +1,7 @@
 # Keeping specs honest: drift checklist and client changes
 
-The process Agreement Hub is built around: projects built with AI from a scope
-the client agreed in Agreement Hub. The skill (`skill/agreement-hub-scope/`,
+The process ag-hub is built around: projects built with AI from a scope
+the client agreed in ag-hub. The skill (`skill/ag-hub-scope/`,
 especially `specs.md`) follows it, and the Progress tab shows its result to
 the client. Drift warnings in the app are planned for later; until then this
 checklist is how drift is kept in check.
@@ -21,7 +21,7 @@ changes spec-first.
 
 | Layer | Answers | Lives in | Changed by |
 |---|---|---|---|
-| **Scope** | What the client agreed | Agreement Hub, and `docs/scope/scope.md` (versions in Git) | Only with the client's agreement |
+| **Scope** | What the client agreed | ag-hub, and `docs/scope/scope.md` (versions in Git) | Only with the client's agreement |
 | **Spec** | What the system must do, line by line, testable | `specs/<feature>/spec.md` | Only when the scope changes, or to make it more precise |
 | **Plan** | How it will be built | `specs/<feature>/plan.md` | Developer / AI, freely |
 | **Tasks** | Steps to build it | `specs/<feature>/tasks.md` | Developer / AI, freely; disposable |
@@ -94,7 +94,7 @@ Ask the AI to fill this in, and check it yourself before merging.
       doesn't say.
 - [ ] Fix each finding: add the missing test, add the missing spec line (with
       the client's agreement if it's visible to them), or fix the code.
-- [ ] Check that every agreed scope section in Agreement Hub has a spec, and
+- [ ] Check that every agreed scope section in ag-hub has a spec, and
       every spec points back to a scope section.
 - [ ] Skim the open tasks: anything stale or no longer matching the spec gets
       removed.
@@ -120,7 +120,7 @@ order every time, even for "tiny" requests.
 ### Step 1: Capture it in writing
 
 - [ ] If it came by call, WhatsApp or email, write it down and put it in
-      Agreement Hub as a comment on the affected section, or as a new
+      ag-hub as a comment on the affected section, or as a new
       question if it needs a decision. The record must show it.
 - [ ] Note the date, who asked, and their exact words.
 - [ ] Never change code straight from a conversation.
@@ -150,10 +150,10 @@ order every time, even for "tiny" requests.
 
 - [ ] Tell the client the impact in plain words: what changes, what it costs
       in time or money, and anything that gets dropped or delayed.
-- [ ] Update the scope **in Agreement Hub** (save `scope.md` and
+- [ ] Update the scope **in ag-hub** (save `scope.md` and
       `record.md` first, as the skill does), so the client reviews just the
       changed section.
-- [ ] **Wait for the client to agree** in Agreement Hub before touching the
+- [ ] **Wait for the client to agree** in ag-hub before touching the
       spec or code. A "yes" on a call becomes a written agreement there.
 - [ ] If the client says no, or wants to think: nothing else changes. Note
       the decision in the thread.
@@ -192,7 +192,7 @@ order every time, even for "tiny" requests.
   version. Don't revert history; restore by adding the line back with a new
   ID or un-striking it with a note.
 - **Two requests that conflict.** Don't pick one yourself. Put both to the
-  client as a question in Agreement Hub.
+  client as a question in ag-hub.
 - **Your own idea while building.** Same steps. If the client would notice
   it, they agree to it first.
 
@@ -200,7 +200,7 @@ order every time, even for "tiny" requests.
 
 ## 8. Templates
 
-**Change request (as a comment or question in Agreement Hub):**
+**Change request (as a comment or question in ag-hub):**
 
 ```
 Change request, 2026-11-02, from the client (phone call)
@@ -233,7 +233,7 @@ Show me the spec diff before touching code.
 ## 9. The rules on one page
 
 1. **Behaviour changes spec-first**, and in the same PR as the code.
-2. **The client agrees** to anything they could notice, in Agreement Hub,
+2. **The client agrees** to anything they could notice, in ag-hub,
    before the spec changes.
 3. **Every spec line has an ID and a test**; every behaviour test names an ID.
 4. **IDs are never reused**; removed lines are struck through with a reason.

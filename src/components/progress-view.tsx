@@ -53,7 +53,7 @@ export function ProgressView({ view }: { view: DocumentView }) {
           </div>
         ) : (
           <p className="rounded-md bg-zinc-50 p-4 text-sm text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
-            No specs yet. With the Agreement Hub skill and connector, ask Claude to{" "}
+            No specs yet. With the ag-hub skill and connector, ask Claude to{" "}
             <em>&quot;write the specs for this scope&quot;</em>: it writes them in your project and
             syncs them here. As tests pass, the checks turn green for you and the client.
           </p>

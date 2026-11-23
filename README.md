@@ -1,15 +1,15 @@
-# Agreement Hub
+# ag-hub
 
 A simple web app that keeps a client and a developer on the same page.
 
 The developer publishes a functionality / scope document at a shareable URL.
 The client reads it and responds right under each section: agree, disagree,
-or ask a question. Agreement Hub holds the latest state; the developer's project
+or ask a question. ag-hub holds the latest state; the developer's project
 holds the full history of the document and the conversation.
 
 ## How it works
 
-1. **Write the scope with Claude** using the Agreement Hub skill (`skill/`, downloadable
+1. **Write the scope with Claude** using the ag-hub skill (`skill/`, downloadable
    from the home page). It writes the document in the import format, so developers never
    need to learn it. For other AI assistants, `/guide` has a prompt and the format rules.
 2. **Import it** on the home page. A preview shows what becomes a section and what
@@ -32,7 +32,7 @@ holds the full history of the document and the conversation.
 `/api/mcp` is an MCP server (Streamable HTTP, no sign-in) so a developer's AI
 assistant can do all of the above without the website. Add it in the Claude app
 under Customize → Connectors, or in Claude Code with
-`claude mcp add --transport http agreement-hub https://<site>/api/mcp`.
+`claude mcp add --transport http ag-hub https://<site>/api/mcp`.
 
 | Tool | Does |
 |---|---|
@@ -88,7 +88,7 @@ Parsing lives in `src/lib/markdown-import.ts` and runs both in the browser
 
 ### What is kept
 
-Agreement Hub keeps only what is needed to review the current state; the
+ag-hub keeps only what is needed to review the current state; the
 developer's project keeps the history (`pruneHistory` in `src/db/index.ts`
 runs after every change and on each cold start):
 
@@ -102,7 +102,7 @@ runs after every change and on each cold start):
 
 Each document has a version number: 1 when published, +1 for every update
 that changes it. Exports write it under the title as
-`**Agreement Hub version:** 3 · **Saved:** 2026-10-22 14:30 UTC`; the importer
+`**ag-hub version:** 3 · **Saved:** 2026-10-22 14:30 UTC`; the importer
 ignores that line.
 
 In the developer's project there is one file for each, replaced in place and
@@ -146,7 +146,7 @@ Open http://localhost:3000. No database setup is needed.
 
 ## Deploy to Vercel
 
-1. Go to [vercel.com/new](https://vercel.com/new) and import the `agreement-hub` GitHub repo.
+1. Go to [vercel.com/new](https://vercel.com/new) and import the `ag-hub` GitHub repo.
 2. Before the first deploy (or right after), open the project's **Storage** tab,
    choose **Neon (Postgres)** from the Marketplace and connect it to the project.
    This sets `DATABASE_URL` for you.
@@ -173,11 +173,11 @@ src/
   lib/rate-limit.ts       rate limits for imports and MCP
   lib/record.ts           the conversation record export
   components/progress-view.tsx   the Progress tab
-docs/how-to.md            step-by-step guide for using Agreement Hub on a project
+docs/how-to.md            step-by-step guide for using ag-hub on a project
 docs/project-notes.md     every decision so far and why
 docs/spec-drift-and-changes.md   checklist for spec drift and client change requests
 skill/                    Claude skill that writes scope documents in this format
-public/agreement-hub-scope.zip   the skill, as served for download
+public/ag-hub-scope.zip   the skill, as served for download
 ```
 
 ## Possible next steps

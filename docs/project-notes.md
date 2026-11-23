@@ -1,13 +1,13 @@
-# Agreement Hub: project notes
+# ag-hub: project notes
 
 Everything decided and built so far, and why. Last updated 26 October 2026.
 
 Live site: https://agreement-hub.vercel.app
-Repository: https://github.com/yankyfreeman/agreement-hub (deploys to Vercel on every push to `main`)
+Repository: https://github.com/yankyfreeman/ag-hub (deploys to Vercel on every push to `main`)
 
 ## Contents
 
-1. [What Agreement Hub is](#1-what-agreement-hub-is)
+1. [What ag-hub is](#1-what-ag-hub-is)
 2. [Who it is for](#2-who-it-is-for)
 3. [How a developer uses it](#3-how-a-developer-uses-it)
 4. [The scope document format](#4-the-scope-document-format)
@@ -29,7 +29,7 @@ Repository: https://github.com/yankyfreeman/agreement-hub (deploys to Vercel on 
 
 ---
 
-## 1. What Agreement Hub is
+## 1. What ag-hub is
 
 A tool that keeps a client and a developer on the same page while planning a
 project. The developer publishes a scope (functionality) document; the client
@@ -60,7 +60,7 @@ focus.
    (`https://agreement-hub.vercel.app/api/mcp`).
 2. Plan the project with Claude and say "make a scope document for the client".
    Claude writes it in the right format.
-3. "Publish it to Agreement Hub." Claude creates the document and returns the
+3. "Publish it to ag-hub." Claude creates the document and returns the
    private **developer link** and the **client link**, and saves version 1 as
    the project's `docs/scope/scope.md`.
 4. The developer sends the client link. The client responds on the website.
@@ -89,13 +89,13 @@ browser preview and on the server).
 | `- **Q1.** Question?` | A question with an answer box |
 | `**Billing**` on its own line | Group label for the questions below it |
 | `see Q3` | Link to question Q3 |
-| `**Agreement Hub version:** 3 · **Saved:** …` under the title | Ignored on import (written by exports) |
+| `**ag-hub version:** 3 · **Saved:** …` under the title | Ignored on import (written by exports) |
 
 Rules worth knowing:
 
 - A section that **contains questions becomes info only** (the client can't
   agree to it), so questions belong in one "Questions for you" section.
-- Agreement Hub keeps every line break, so paragraphs and list items should be
+- ag-hub keeps every line break, so paragraphs and list items should be
   written on one line each.
 - **Re-importing:** sections match by heading text ignoring the number, then by
   number; questions match by Q number. Changed items get a new version and need
@@ -114,8 +114,8 @@ edited and re-imported with nothing changing by accident. A round-trip test
 
 ## 5. The Claude skill
 
-`skill/agreement-hub-scope/` (`SKILL.md` and `example.md`), served for download
-as `public/agreement-hub-scope.zip`. It is the main way developers write scope
+`skill/ag-hub-scope/` (`SKILL.md` and `example.md`), served for download
+as `public/ag-hub-scope.zip`. It is the main way developers write scope
 documents; the portal leads with it.
 
 What it does:
@@ -143,7 +143,7 @@ Rebuild the ZIP after editing the skill, from the `skill` folder (Windows
 PowerShell's `Compress-Archive` writes `\` paths that some tools reject):
 
 ```bash
-tar -a -cf ../public/agreement-hub-scope.zip agreement-hub-scope
+tar -a -cf ../public/ag-hub-scope.zip ag-hub-scope
 ```
 
 When the parser changes, update `SKILL.md`, `example.md` and the prompt on
@@ -158,9 +158,9 @@ no sign-in.
 Connect:
 
 - **Claude app:** Customize → Connectors → add a custom connector, name it
-  Agreement Hub, URL `https://agreement-hub.vercel.app/api/mcp`, no sign-in.
+  ag-hub, URL `https://agreement-hub.vercel.app/api/mcp`, no sign-in.
   (The Claude app connects from Anthropic's cloud.)
-- **Claude Code:** `claude mcp add --transport http agreement-hub https://agreement-hub.vercel.app/api/mcp`
+- **Claude Code:** `claude mcp add --transport http ag-hub https://agreement-hub.vercel.app/api/mcp`
 
 | Tool | Does |
 |---|---|
@@ -266,7 +266,7 @@ version.
 Every exported file carries it under the title:
 
 ```
-**Agreement Hub version:** 3 · **Saved:** 2026-10-22 14:30 UTC
+**ag-hub version:** 3 · **Saved:** 2026-10-22 14:30 UTC
 ```
 
 The importer ignores that line, so it never ends up in the client's document.
@@ -294,7 +294,7 @@ booking-app/                 the developer's project (their git repo)
 - **`record.md`**: every section's and question's status and every message,
   with who wrote it, when and on which version. No links, so it is safe to
   commit. Committed whenever it is saved.
-- Both files carry the `Agreement Hub version … Saved …` line, in UTC.
+- Both files carry the `ag-hub version … Saved …` line, in UTC.
 - **Saved by download, not retyped:** the skill runs
   `curl -sSf "<developer link>/export/document" -o docs/scope/scope.md` (and
   `/export/record`), so the file is exactly what the portal holds. The website's
@@ -343,7 +343,7 @@ cases, and steps in where the AI misses something.
 **What lives where:**
 
 ```
-AGREEMENT HUB (portal)                  DEVELOPER'S REPO
+AG-HUB (portal)                  DEVELOPER'S REPO
 Client link                             docs/scope/        scope.md, record.md
  ├─ Scope tab      what was agreed      specs/<feature>/   spec.md, plan.md, tasks.md
  └─ Progress tab   what is verified     tests              one or more per spec ID
@@ -465,8 +465,8 @@ src/
     mcp.ts                           MCP tools and server instructions
     record.ts                        conversation record export
     rate-limit.ts                    rate limits
-skill/agreement-hub-scope/           the Claude skill
-public/agreement-hub-scope.zip       the skill, as downloaded
+skill/ag-hub-scope/           the Claude skill
+public/ag-hub-scope.zip       the skill, as downloaded
 ```
 
 Stack: Next.js 16 (App Router, Server Actions, Cache Components), TypeScript,
@@ -530,8 +530,8 @@ d62a86c Initial Next.js scaffold for Agreement Hub
 
 ## 18. Setup notes
 
-- The working copy is `C:\Users\xyzat\Documents\github\agreement-hub`, a git
-  clone of `yankyfreeman/agreement-hub`. An older non-git copy,
+- The working copy is `C:\Users\xyzat\Documents\github\ag-hub`, a git
+  clone of `yankyfreeman/ag-hub`. An older non-git copy,
   `agreement-hub-old`, sits next to it and can be deleted.
 - Work goes on a branch; Vercel builds a preview for it (previews ask for a
   Vercel sign-in). Merging to `main` deploys to production.

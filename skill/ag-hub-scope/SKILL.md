@@ -1,11 +1,11 @@
 ---
-name: agreement-hub-scope
-description: Writes and updates project scope documents (the functionality, requirements or proposal document a developer shares with a client for sign-off) in the Markdown format that Agreement Hub imports, and keeps their history in the project. Use whenever the user asks for a scope document, project scope, functionality document, requirements document or client proposal, wants to turn a project discussion, notes or an existing document into one, asks to prepare a document for Agreement Hub, wants to update one after client feedback, or asks what the client said, to reply to the client, or to publish a scope document. Also use it to turn an agreed scope into feature specs and tasks ("write the specs", "break the scope into features", "plan the build") and to report build progress to the client.
+name: ag-hub-scope
+description: Writes and updates project scope documents (the functionality, requirements or proposal document a developer shares with a client for sign-off) in the Markdown format that ag-hub (formerly Agreement Hub) imports, and keeps their history in the project. Use whenever the user asks for a scope document, project scope, functionality document, requirements document or client proposal, wants to turn a project discussion, notes or an existing document into one, asks to prepare a document for ag-hub, wants to update one after client feedback, or asks what the client said, to reply to the client, or to publish a scope document. Also use it to turn an agreed scope into feature specs and tasks ("write the specs", "break the scope into features", "plan the build") and to report build progress to the client.
 ---
 
-# Agreement Hub scope documents
+# ag-hub scope documents
 
-Agreement Hub turns a Markdown file into a review page for the client: every
+ag-hub turns a Markdown file into a review page for the client: every
 section becomes an item the client agrees or disagrees with, and every question
 gets its own answer box. The format below is how the import tells them apart.
 
@@ -36,12 +36,12 @@ the project's copy up to date. Don't explain the format to them unless they ask.
 4. **Save it in the project** as `docs/scope/scope.md` (see "The project
    folder") when you can write files. Otherwise put the whole document
    in a single Markdown code block so it can be copied in one go.
-5. **Publish it:** if the Agreement Hub connector is available (tools such as
+5. **Publish it:** if the ag-hub connector is available (tools such as
    `create_document`), offer to publish it (see "With the connector").
    Otherwise close with a short note: the file name, how many sections and
    questions it has, which sections to tick as **Info only** in the import
    preview (sections the client doesn't need to agree to, such as "About this
-   document" or "Next steps"), and "Import it on the Agreement Hub home page."
+   document" or "Next steps"), and "Import it on the ag-hub home page."
 
 ## Format
 
@@ -52,8 +52,8 @@ the project's copy up to date. Don't explain the format to them unless they ask.
 - Directly under it, optional lines such as `**Prepared for:** …` and
   `**Prepared by:** …`, each on its own line, and at most one short sentence.
   Everything before the first `##` heading becomes the introduction.
-- Don't write a version or date yourself. Agreement Hub numbers the versions
-  and adds a line like `**Agreement Hub version:** 3 · **Saved:** 2026-10-22
+- Don't write a version or date yourself. ag-hub numbers the versions
+  and adds a line like `**ag-hub version:** 3 · **Saved:** 2026-10-22
   14:30 UTC` under the title of every file it gives you. Leave that line as it
   is; it is ignored when the file is imported.
 
@@ -98,7 +98,7 @@ the project's copy up to date. Don't explain the format to them unless they ask.
 
 ### Avoid
 
-- Wrapping lines by hand. Agreement Hub keeps every line break, so write each
+- Wrapping lines by hand. ag-hub keeps every line break, so write each
   paragraph, list item and question on a single line, however long.
 - A second `#` heading anywhere: only the first one is the title.
 - Questions written without the `**Qn.**` label: they would be read as plain
@@ -109,7 +109,7 @@ the project's copy up to date. Don't explain the format to them unless they ask.
 ## Updating an existing document
 
 When the user brings back client feedback, or asks to change a document that is
-already in Agreement Hub, start from the latest version of the file and edit it.
+already in ag-hub, start from the latest version of the file and edit it.
 Don't rewrite it from scratch. Re-importing compares the new file with the old
 one, and these rules keep the client's earlier agreements:
 
@@ -129,7 +129,7 @@ Follow the save points below around every update.
 
 ## The project folder
 
-Agreement Hub keeps only the current and previous version of each section and
+ag-hub keeps only the current and previous version of each section and
 question, with the messages about them; anything older, and anything an update
 removes, is deleted there. The developer's project keeps the full history with
 **Git**: one file for the document and one for the conversation, replaced in
@@ -146,12 +146,12 @@ docs/scope/
 - `record.md`: **the conversation record**, what was said and agreed about it:
   every section's and question's status and every message, with who wrote it,
   when and on which version. It contains no links, so it is safe to commit.
-- Both start with an `Agreement Hub version … Saved …` line under the title.
+- Both start with an `ag-hub version … Saved …` line under the title.
 - `links.local.md`: secret. Add `docs/scope/*.local.md` to the project's
   `.gitignore` and never commit it.
 
 **Saving the files.** Download them rather than retyping them, so the file is
-exactly what Agreement Hub holds. The developer link (`…/manage/<secret>`) has
+exactly what ag-hub holds. The developer link (`…/manage/<secret>`) has
 two download addresses:
 
 ```bash
@@ -203,7 +203,7 @@ replacing the old ones, and commit.
 
 ## With the connector
 
-When the Agreement Hub connector's tools are available, the developer never
+When the ag-hub connector's tools are available, the developer never
 needs to open the website:
 
 - **Publish:** with the developer's go-ahead, call `create_document` with the
@@ -241,7 +241,7 @@ needs to open the website:
 Once the scope is agreed, the build is planned in the project as feature specs
 (`specs/<feature>/spec.md`, each line a testable behaviour with a permanent ID
 tied to a scope section), then plans and tasks. With the connector,
-`sync_specs` sends the spec lines to Agreement Hub and `report_progress` sends
+`sync_specs` sends the spec lines to ag-hub and `report_progress` sends
 test results, so the client follows along on the **Progress** tab. Read
 `specs.md` (next to this file) before writing specs or tasks, or reporting
 progress.

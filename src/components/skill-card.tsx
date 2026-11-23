@@ -1,5 +1,5 @@
-// Built from skill/agreement-hub-scope (see skill/README.md).
-const SKILL_ZIP = "/agreement-hub-scope.zip";
+// Built from skill/ag-hub-scope (see skill/README.md).
+const SKILL_ZIP = "/ag-hub-scope.zip";
 
 /** The recommended way to write a scope document: the Claude skill, with download and install steps. */
 export function SkillCard() {
@@ -12,7 +12,7 @@ export function SkillCard() {
           </p>
           <h2 className="text-lg font-semibold">Write your scope with Claude</h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Add the Agreement Hub skill to Claude once. Then just talk through your project and
+            Add the ag-hub skill to Claude once. Then just talk through your project and
             ask for a scope document: Claude writes it ready to import, with no format to learn.
             It also updates the document after your client responds, without losing what was
             already agreed.
@@ -52,7 +52,7 @@ export function SkillCard() {
           Then ask: <em>&quot;Make a scope document for the client.&quot;</em>
         </p>
         <p>
-          Already have a document? Give it to Claude and ask it to prepare it for Agreement Hub.
+          Already have a document? Give it to Claude and ask it to prepare it for ag-hub.
         </p>
       </div>
     </section>

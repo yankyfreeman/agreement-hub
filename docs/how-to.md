@@ -1,6 +1,6 @@
-# How to use Agreement Hub in a project
+# How to use ag-hub in a project
 
-A step-by-step guide for using Agreement Hub on any project: agree the scope
+A step-by-step guide for using ag-hub on any project: agree the scope
 with the client, turn it into specs, build it, and show the client progress.
 Claude does the writing; you review, decide and handle the real-world cases.
 
@@ -19,33 +19,33 @@ spec/progress process.
 
   Windows (PowerShell):
   ```powershell
-  Invoke-WebRequest https://agreement-hub.vercel.app/agreement-hub-scope.zip -OutFile $env:TEMP\ahs.zip
+  Invoke-WebRequest https://agreement-hub.vercel.app/ag-hub-scope.zip -OutFile $env:TEMP\ahs.zip
   Expand-Archive $env:TEMP\ahs.zip "$HOME\.claude\skills" -Force
   ```
   macOS / Linux:
   ```bash
-  curl -L -o /tmp/ahs.zip https://agreement-hub.vercel.app/agreement-hub-scope.zip
+  curl -L -o /tmp/ahs.zip https://agreement-hub.vercel.app/ag-hub-scope.zip
   unzip -o /tmp/ahs.zip -d ~/.claude/skills
   ```
 - **Claude app (web or desktop):** Customize → Skills → + → Create skill →
   Upload a skill, and choose the ZIP. Needs "Code execution and file creation"
   on in Settings → Capabilities.
 
-Check: `~/.claude/skills/agreement-hub-scope/SKILL.md` exists. Re-download the
+Check: `~/.claude/skills/ag-hub-scope/SKILL.md` exists. Re-download the
 ZIP when the skill is updated.
 
-### 2. Connect Claude to Agreement Hub (MCP)
+### 2. Connect Claude to ag-hub (MCP)
 
 Lets Claude publish, read the client's responses, reply, update, and report
 progress without you opening the website.
 
 - **Claude Code**, for all your projects:
   ```bash
-  claude mcp add --transport http --scope user agreement-hub https://agreement-hub.vercel.app/api/mcp
+  claude mcp add --transport http --scope user ag-hub https://agreement-hub.vercel.app/api/mcp
   ```
   Check with `claude mcp list`.
 - **Claude app:** Customize → Connectors → add a custom connector, name it
-  Agreement Hub, URL `https://agreement-hub.vercel.app/api/mcp`, no sign-in.
+  ag-hub, URL `https://agreement-hub.vercel.app/api/mcp`, no sign-in.
 
 No account or key is needed. Each document's **developer link** is its key.
 
@@ -75,7 +75,7 @@ not included. Give Claude any notes, emails or an old document.
 > **Say:** "Make a scope document for the client. Prepared for Dr. Smith,
 > prepared by Yanky."
 >
-> or: "Here's my existing proposal. Prepare it for Agreement Hub."
+> or: "Here's my existing proposal. Prepare it for ag-hub."
 
 Claude writes `docs/scope/scope.md`, then reviews it for gaps and edge cases
 and tells you which questions it added. Read it fully. Anything undecided
@@ -83,7 +83,7 @@ should be a **question for the client** (`Q1`, `Q2`…), not a guess.
 
 ### Step 3. Publish it
 
-> **Say:** "Publish it to Agreement Hub."
+> **Say:** "Publish it to ag-hub."
 
 Claude returns two links and saves them in `docs/scope/links.local.md`:
 
@@ -121,7 +121,7 @@ Claude shows you the reply before posting unless you've given the exact words.
 What Claude does, in order:
 
 1. Saves the current `scope.md` and `record.md` in `docs/scope/` and commits
-   (Agreement Hub keeps only the last 2 versions; your project's Git history
+   (ag-hub keeps only the last 2 versions; your project's Git history
    keeps them all).
 2. Edits only the sections that change, keeping headings and question numbers.
 3. Shows you a **preview**: which sections the client must review again, and
@@ -147,7 +147,7 @@ behaviour with an ID and the scope section it comes from:
 
 Review them: this is where you add the real-world cases (slow network, wrong
 input, two people at once, permissions, large data). Then Claude sends the
-lines to Agreement Hub (`sync_specs`) and tells you which agreed sections
+lines to ag-hub (`sync_specs`) and tells you which agreed sections
 have no spec lines yet. Every agreed section should be covered, or have a
 reason it isn't.
 
@@ -173,7 +173,7 @@ reason it isn't.
 Never change code straight from a call or message. Follow
 `docs/spec-drift-and-changes.md` section 7, in short:
 
-1. Write the request into Agreement Hub (comment or question).
+1. Write the request into ag-hub (comment or question).
 2. Work out the impact: sections, spec IDs, tasks, tests, time, cost.
 3. Update the scope (step 6) and **wait for the client to agree**.
 4. Then update, in order: spec → tests → plan → tasks → code.
@@ -197,7 +197,7 @@ your-project/
     tasks.md   the steps
 ```
 
-Agreement Hub holds only the live copy: the current and previous version of
+ag-hub holds only the live copy: the current and previous version of
 each section, its messages, and the spec lines with their test status.
 
 Git keeps every version of `scope.md`. Each one is committed as
@@ -214,7 +214,7 @@ Git keeps every version of `scope.md`. Each one is committed as
 ## Rules to keep
 
 1. **Scope leads, spec follows, code follows the spec.** Nothing the client
-   could notice changes without their agreement in Agreement Hub.
+   could notice changes without their agreement in ag-hub.
 2. **Never let important text change quietly.** Read every preview and diff
    before it's applied.
 3. **Keep the developer link private.** Never in the document, the record, a
@@ -228,8 +228,8 @@ Git keeps every version of `scope.md`. Each one is committed as
 
 | Problem | Fix |
 |---|---|
-| Claude doesn't use the skill | Check `~/.claude/skills/agreement-hub-scope/SKILL.md` exists; start a new session; or say "use the agreement-hub-scope skill" |
-| Claude has no Agreement Hub tools | `claude mcp list`; add it again (Part 1, step 2); start a new session |
+| Claude doesn't use the skill | Check `~/.claude/skills/ag-hub-scope/SKILL.md` exists; start a new session; or say "use the ag-hub-scope skill" |
+| Claude has no ag-hub tools | `claude mcp list`; add it again (Part 1, step 2); start a new session |
 | Claude asks for the developer link | It's in `docs/scope/links.local.md`, or your bookmark |
 | Lost the developer link | It can't be recovered. Publish `docs/scope/scope.md` as a new document and send the client the new link |
 | Project has old dated files (`…-scope-v2_2026-….md`) | Say "switch docs/scope to one file". Claude keeps the latest as `scope.md` and removes the old copies; they stay in Git history |

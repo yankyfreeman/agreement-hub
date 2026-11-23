@@ -29,8 +29,9 @@ export type ParsedDocument = {
 };
 
 const QUESTION_LABEL = /^Q(\d+)\.?$/i;
-// "**Agreement Hub version:** 3 · **Saved:** 2026-10-22 14:30 UTC", written by exports.
-const VERSION_LINE = /^Agreement Hub version:/;
+// "**ag-hub version:** 3 · **Saved:** 2026-10-22 14:30 UTC", written by exports.
+// Files saved before the rename say "Agreement Hub version:".
+const VERSION_LINE = /^(?:ag-hub|Agreement Hub) version:/;
 // "4.1 Platform", "6. Admin Panel", "10) Next steps"
 const NUMBERED_HEADING = /^(\d+(?:\.\d+)*)[.)]?\s+/;
 
@@ -155,7 +156,13 @@ export function parseMarkdown(source: string): ParsedDocument {
 
     if (!current) {
       // The version line exports add is information for the file, not content.
-      if (!(node.type === "paragraph" && VERSION_LINE.test(toString(node)))) introBlocks.push(raw(node));
+      // Drop only that line: text typed on the lines right below it stays.
+      if (node.type === "paragraph" && VERSION_LINE.test(toString(node))) {
+        const rest = raw(node).split("\n").slice(1).join("\n").trim();
+        if (rest) introBlocks.push(rest);
+      } else {
+        introBlocks.push(raw(node));
+      }
       continue;
     }
 
@@ -223,7 +230,7 @@ export function toMarkdown(
 ) {
   const out: string[] = [`# ${doc.title}`];
   if (doc.version) {
-    out.push(`**Agreement Hub version:** ${doc.version.number} · **Saved:** ${doc.version.savedAt}`);
+    out.push(`**ag-hub version:** ${doc.version.number} · **Saved:** ${doc.version.savedAt}`);
   }
   if (doc.intro) out.push(doc.intro);
 

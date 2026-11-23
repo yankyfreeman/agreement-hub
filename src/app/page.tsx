@@ -9,7 +9,7 @@ const STEPS = [
   ["Write the scope with Claude", "Plan the project with Claude and our skill. It gives you a file that is ready to import."],
   ["Import it", "Sections and Q1, Q2… questions are picked up automatically. Check the preview."],
   ["Share one link", "The client agrees or disagrees per section and answers the questions in one go."],
-  ["Update and keep the record", "Re-import the next version. Your project keeps the full history; Agreement Hub keeps the latest two."],
+  ["Update and keep the record", "Re-import the next version. Your project keeps the full history; ag-hub keeps the latest two."],
 ];
 
 const AI_PLANNING = [
@@ -35,7 +35,7 @@ export default function Home() {
   return (
     <main className="mx-auto w-full max-w-3xl space-y-10 px-4 py-12">
       <header className="space-y-3">
-        <p className="text-sm font-semibold">Agreement Hub</p>
+        <p className="text-sm font-semibold">ag-hub</p>
         <h1 className="text-3xl font-bold tracking-tight">
           Get your client and your team on the same page.
         </h1>
@@ -50,7 +50,7 @@ export default function Home() {
         <div className="space-y-1">
           <h2 className="text-lg font-semibold">Plan with AI, not just build with it</h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            With the Agreement Hub skill, Claude follows the whole conversation between you and
+            With the ag-hub skill, Claude follows the whole conversation between you and
             your client: every section, answer, objection and reply. It uses that to make the plan
             better, then carries it all the way into the build.
           </p>

@@ -114,7 +114,7 @@ export function DocumentView({ view, token, tab }: { view: View; token: string; 
         <main className="mx-auto w-full min-w-0 max-w-4xl space-y-6">
           <nav className="flex items-center justify-between print:hidden">
             <Link href="/" className="text-sm font-semibold">
-              Agreement Hub
+              ag-hub
             </Link>
             <PrintButton />
           </nav>
@@ -242,12 +242,12 @@ function DeveloperPanel({ view, token }: { view: View; token: string }) {
       <div className="space-y-2 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
         <p className="text-sm font-medium">Keep a copy in your project</p>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Agreement Hub keeps only the current and previous version of each section, with the
+          ag-hub keeps only the current and previous version of each section, with the
           messages about them. Your project keeps the full history: save the files as{" "}
           <code className="text-xs">docs/scope/scope.md</code> and{" "}
           <code className="text-xs">docs/scope/record.md</code>, replacing the old ones, and
           commit before and after each update. Git keeps every version. Claude with the
-          Agreement Hub skill does this for you.
+          ag-hub skill does this for you.
         </p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
           <a href={`/manage/${token}/export/document`} className="underline" download>
