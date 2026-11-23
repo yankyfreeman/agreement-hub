@@ -531,9 +531,7 @@ d62a86c Initial Next.js scaffold for Agreement Hub
 
 ## 18. Setup notes
 
-- The working copy is `C:\Users\xyzat\Documents\github\agreement-hub`, a git
-  clone of `yankyfreeman/agreement-hub`. An older non-git copy,
-  `agreement-hub-old`, sits next to it and can be deleted.
+- The working copy is a local git clone of `yankyfreeman/agreement-hub`.
 - Work goes on a branch; Vercel builds a preview for it (previews ask for a
   Vercel sign-in). Merging to `main` deploys to production.
 - `npm run dev` runs locally on port 3000 with the PGlite database; no setup
@@ -550,7 +548,7 @@ d62a86c Initial Next.js scaffold for Agreement Hub
 - Drop the unused `sections.archived_at` column in a later release.
 - Re-upload the skill in Claude whenever it changes (last updated 23 November:
   gap review, one `scope.md` versioned by Git). Projects with their own copy
-  (car wash) need the new files copied in.
+  of the skill need the new files copied in.
 - Email notifications when the other side responds (would need an email
   service; free tiers are enough at this size).
 - A document list for developers would need accounts (GitHub sign-in or
