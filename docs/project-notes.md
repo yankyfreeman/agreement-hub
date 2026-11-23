@@ -3,7 +3,7 @@
 Everything decided and built so far, and why. Last updated 26 October 2026.
 
 Live site: https://agreement-hub.vercel.app
-Repository: https://github.com/yankyfreeman/ag-hub (deploys to Vercel on every push to `main`)
+Repository: https://github.com/yankyfreeman/agreement-hub (deploys to Vercel on every push to `main`)
 
 ## Contents
 
@@ -509,6 +509,7 @@ remembered APIs.
 | 26 Oct | Spec drift and change-request checklist; specs from scope in the skill, `sync_specs` and `report_progress`, Progress tab |
 | 3–4 Nov | Highlight agreed sections; the client can agree to a section only once per version |
 | 23 Nov | Home page: planning with AI and versions; skill looks for gaps and edge cases; one `scope.md` + `record.md` versioned by Git replaces dated snapshots |
+| 23 Nov | Product renamed to ag-hub (site, skill `ag-hub-scope`, connector, docs). The GitHub repo, local folder and web address keep the name `agreement-hub` |
 
 Commits on `main` up to 22 October (later ones: `git log`):
 
@@ -530,8 +531,8 @@ d62a86c Initial Next.js scaffold for Agreement Hub
 
 ## 18. Setup notes
 
-- The working copy is `C:\Users\xyzat\Documents\github\ag-hub`, a git
-  clone of `yankyfreeman/ag-hub`. An older non-git copy,
+- The working copy is `C:\Users\xyzat\Documents\github\agreement-hub`, a git
+  clone of `yankyfreeman/agreement-hub`. An older non-git copy,
   `agreement-hub-old`, sits next to it and can be deleted.
 - Work goes on a branch; Vercel builds a preview for it (previews ask for a
   Vercel sign-in). Merging to `main` deploys to production.

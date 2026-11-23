@@ -146,7 +146,7 @@ Open http://localhost:3000. No database setup is needed.
 
 ## Deploy to Vercel
 
-1. Go to [vercel.com/new](https://vercel.com/new) and import the `ag-hub` GitHub repo.
+1. Go to [vercel.com/new](https://vercel.com/new) and import the `agreement-hub` GitHub repo.
 2. Before the first deploy (or right after), open the project's **Storage** tab,
    choose **Neon (Postgres)** from the Marketplace and connect it to the project.
    This sets `DATABASE_URL` for you.
